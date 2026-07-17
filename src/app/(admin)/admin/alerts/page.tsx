@@ -1,0 +1,265 @@
+"use client";
+
+import { useState } from "react";
+import { useForm, Controller } from "react-hook-form";
+import { Plus, Radar, Trash2, Pencil } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetFooter,
+} from "@/components/ui/sheet";
+import { ConfirmDialog } from "@/components/ui/alert-dialog";
+import { PageHeader } from "@/components/dashboard/page-header";
+import { DataTable, type Column } from "@/components/dashboard/data-table";
+import { DistrictSelect } from "@/components/dashboard/district-select";
+import { AlertSeverityBadge } from "@/components/dashboard/alert-severity-badge";
+import { useAlerts, useCreateAlert, useDeleteAlert, useUpdateAlert, type AlertInput } from "@/lib/hooks/use-alerts";
+import type { Alert, AlertSeverity } from "@/lib/types/api";
+
+const SEVERITIES: AlertSeverity[] = ["NORMAL", "WATCH", "WARNING", "DANGER", "CRITICAL"];
+
+function AlertFormSheet({
+  open,
+  onOpenChange,
+  editing,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  editing: Alert | null;
+}) {
+  const createAlert = useCreateAlert();
+  const updateAlert = useUpdateAlert();
+  const { register, handleSubmit, control, reset } = useForm<AlertInput>({
+    values: editing
+      ? {
+          title: editing.title,
+          titleBn: editing.titleBn ?? "",
+          description: editing.description,
+          severity: editing.severity,
+          districtId: editing.districtId,
+          waterLevelCm: editing.waterLevelCm ?? undefined,
+        }
+      : {
+          title: "",
+          titleBn: "",
+          description: "",
+          severity: "WATCH",
+          districtId: undefined as unknown as number,
+          waterLevelCm: undefined,
+        },
+  });
+
+  const onSubmit = async (values: AlertInput) => {
+    if (editing) {
+      await updateAlert.mutateAsync({ id: editing.id, data: values });
+    } else {
+      await createAlert.mutateAsync(values);
+      reset();
+    }
+    onOpenChange(false);
+  };
+
+  const isSubmitting = createAlert.isPending || updateAlert.isPending;
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent className="overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle>{editing ? "Edit Alert" : "New Flood Alert"}</SheetTitle>
+        </SheetHeader>
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 px-4">
+          <div className="flex flex-col gap-1.5">
+            <Label>Title</Label>
+            <Input {...register("title", { required: true })} placeholder="Flash Flood Warning — Banshkhali" />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label>Title (Bangla)</Label>
+            <Input {...register("titleBn")} placeholder="আকস্মিক বন্যা সতর্কতা" />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label>Description</Label>
+            <Textarea {...register("description", { required: true })} rows={3} />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label>Severity</Label>
+            <Controller
+              name="severity"
+              control={control}
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger className="w-full data-[size=default]:h-10 rounded-lg">
+                    <SelectValue placeholder="Select severity..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SEVERITIES.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {s}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label>District</Label>
+            <Controller
+              name="districtId"
+              control={control}
+              rules={{ required: true }}
+              render={({ field }) => (
+                <DistrictSelect value={field.value} onChange={field.onChange} />
+              )}
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label>Water Level (cm)</Label>
+            <Input type="number" {...register("waterLevelCm", { valueAsNumber: true })} />
+          </div>
+          <SheetFooter className="px-0">
+            <Button type="submit" disabled={isSubmitting} className="font-semibold">
+              {editing ? "Save Changes" : "Create Alert"}
+            </Button>
+          </SheetFooter>
+        </form>
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+export default function AdminAlertsPage() {
+  const { data, isLoading } = useAlerts({ limit: 50 });
+  const deleteAlert = useDeleteAlert();
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [editing, setEditing] = useState<Alert | null>(null);
+  const [toDelete, setToDelete] = useState<Alert | null>(null);
+
+  const openCreate = () => {
+    setEditing(null);
+    setSheetOpen(true);
+  };
+
+  const columns: Column<Alert>[] = [
+    {
+      key: "title",
+      header: "Title",
+      primary: true,
+      render: (a) => (
+        <div className="flex flex-col gap-1 min-w-0">
+          <span className="font-semibold text-foreground truncate max-w-full sm:max-w-64">{a.title}</span>
+          <div className="sm:hidden"><AlertSeverityBadge severity={a.severity} /></div>
+        </div>
+      ),
+    },
+    { key: "district", header: "District", render: (a) => a.district.nameEn },
+    {
+      key: "severity",
+      header: "Severity",
+      hideOnMobile: true,
+      render: (a) => <AlertSeverityBadge severity={a.severity} />,
+    },
+    {
+      key: "water",
+      header: "Water Level",
+      render: (a) => (a.waterLevelCm ? `${a.waterLevelCm} cm` : "—"),
+    },
+    {
+      key: "posted",
+      header: "Posted",
+      render: (a) => (
+        <span className="text-muted-foreground">{new Date(a.createdAt).toLocaleDateString()}</span>
+      ),
+    },
+    {
+      key: "actions",
+      header: "Actions",
+      align: "right",
+      render: (a) => (
+        <div className="flex items-center justify-end gap-1">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              setEditing(a);
+              setSheetOpen(true);
+            }}
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+            onClick={(e) => {
+              e.stopPropagation();
+              setToDelete(a);
+            }}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      ),
+    },
+  ];
+
+  return (
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        icon={Radar}
+        title="Alert Management"
+        description="Post and manage flood alerts across districts"
+        action={
+          <Button className="gap-2 font-semibold" onClick={openCreate}>
+            <Plus className="h-4 w-4" />
+            New Alert
+          </Button>
+        }
+      />
+
+      <DataTable
+        columns={columns}
+        data={data?.data}
+        isLoading={isLoading}
+        getRowKey={(a) => a.id}
+        emptyIcon={Radar}
+        emptyTitle="No alerts posted yet"
+        emptyDescription="Create a flood alert to warn affected districts."
+        emptyAction={
+          <Button className="gap-2 font-semibold" onClick={openCreate}>
+            <Plus className="h-4 w-4" />
+            New Alert
+          </Button>
+        }
+      />
+
+      <AlertFormSheet open={sheetOpen} onOpenChange={setSheetOpen} editing={editing} />
+
+      <ConfirmDialog
+        open={toDelete !== null}
+        onOpenChange={(open) => !open && setToDelete(null)}
+        title="Delete this alert?"
+        description={toDelete ? `"${toDelete.title}" will be permanently removed.` : undefined}
+        confirmLabel="Delete Alert"
+        variant="destructive"
+        isLoading={deleteAlert.isPending}
+        onConfirm={() => {
+          if (toDelete) deleteAlert.mutate(toDelete.id);
+        }}
+      />
+    </div>
+  );
+}
