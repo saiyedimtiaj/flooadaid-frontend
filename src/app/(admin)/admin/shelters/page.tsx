@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
-import { Plus, MapPin, Trash2, Check } from "lucide-react";
+import { Plus, MapPin, Trash2, Check, Users, Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,11 +16,21 @@ import {
   SheetTitle,
   SheetFooter,
 } from "@/components/ui/sheet";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ConfirmDialog } from "@/components/ui/alert-dialog";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { DistrictSelect } from "@/components/dashboard/district-select";
+import { LocationPicker } from "@/components/map/location-picker";
+import { toast } from "sonner";
 import {
   useCreateShelter,
   useDeleteShelter,
@@ -38,7 +48,7 @@ function ShelterFormSheet({
   onOpenChange: (open: boolean) => void;
 }) {
   const createShelter = useCreateShelter();
-  const { register, handleSubmit, control, reset } = useForm<ShelterInput>({
+  const { register, handleSubmit, control, reset, setValue, watch } = useForm<ShelterInput>({
     defaultValues: {
       name: "",
       address: "",
@@ -55,7 +65,16 @@ function ShelterFormSheet({
     },
   });
 
+  const lat = watch("latitude");
+  const lng = watch("longitude");
+  const pickedLocation =
+    typeof lat === "number" && typeof lng === "number" ? { lat, lng } : null;
+
   const onSubmit = async (values: ShelterInput) => {
+    if (typeof values.latitude !== "number" || typeof values.longitude !== "number") {
+      toast.error("Please set the shelter location on the map");
+      return;
+    }
     await createShelter.mutateAsync(values);
     reset();
     onOpenChange(false);
@@ -85,15 +104,19 @@ function ShelterFormSheet({
               render={({ field }) => <DistrictSelect value={field.value} onChange={field.onChange} />}
             />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <Label>Latitude</Label>
-              <Input type="number" step="any" {...register("latitude", { required: true, valueAsNumber: true })} />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label>Longitude</Label>
-              <Input type="number" step="any" {...register("longitude", { required: true, valueAsNumber: true })} />
-            </div>
+          <div className="flex flex-col gap-1.5">
+            <Label>Location on Map</Label>
+            <p className="text-xs text-muted-foreground -mt-0.5">
+              Tap the shelter&apos;s spot on the map, or use your current location.
+            </p>
+            <LocationPicker
+              value={pickedLocation}
+              onChange={(loc) => {
+                setValue("latitude", loc.lat, { shouldValidate: true });
+                setValue("longitude", loc.lng, { shouldValidate: true });
+              }}
+              heightClass="h-64"
+            />
           </div>
           <div className="flex flex-col gap-1.5">
             <Label>Capacity</Label>
@@ -148,6 +171,66 @@ function occupancyTint(rate: number) {
   return { bar: "text-emerald-500", chip: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-500", label: "Available" };
 }
 
+function OccupancyDialog({
+  shelter,
+  open,
+  onOpenChange,
+}: {
+  shelter: Shelter;
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+}) {
+  const updateOccupancy = useUpdateShelterOccupancy();
+  const [value, setValue] = useState(String(shelter.currentOccupancy));
+  const dirty = Number(value) !== shelter.currentOccupancy && value !== "";
+  const previewRate = Math.min(
+    100,
+    Math.round((Number(value || 0) / shelter.capacity) * 100),
+  );
+
+  const submit = async () => {
+    await updateOccupancy.mutateAsync({ id: shelter.id, currentOccupancy: Number(value) });
+    onOpenChange(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Update Occupancy</DialogTitle>
+          <DialogDescription>{shelter.name}</DialogDescription>
+        </DialogHeader>
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="occ">Current occupancy</Label>
+            <Input
+              id="occ"
+              type="number"
+              min={0}
+              max={shelter.capacity}
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Capacity: {shelter.capacity} people · {previewRate}% full
+            </p>
+          </div>
+          <Progress value={previewRate} className="h-2" />
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="font-semibold">
+            Cancel
+          </Button>
+          <Button onClick={submit} disabled={!dirty || updateOccupancy.isPending} className="gap-2 font-semibold">
+            {updateOccupancy.isPending ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
+            Save
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function ShelterCard({
   shelter,
   onDelete,
@@ -155,11 +238,9 @@ function ShelterCard({
   shelter: Shelter;
   onDelete: (shelter: Shelter) => void;
 }) {
-  const updateOccupancy = useUpdateShelterOccupancy();
-  const [value, setValue] = useState(String(shelter.currentOccupancy));
+  const [occOpen, setOccOpen] = useState(false);
   const rate = Math.round((shelter.currentOccupancy / shelter.capacity) * 100);
   const tint = occupancyTint(rate);
-  const dirty = Number(value) !== shelter.currentOccupancy && value !== "";
 
   return (
     <Card className="group rounded-3xl border border-border bg-card p-5 flex flex-col gap-3.5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm hover:border-primary/25">
@@ -194,29 +275,17 @@ function ShelterCard({
       </div>
       <Progress value={rate} className="h-1.5" />
 
-      <div className="flex items-center gap-2 mt-1">
-        <Input
-          type="number"
-          min={0}
-          max={shelter.capacity}
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          className="h-8"
-          aria-label="Current occupancy"
-        />
-        <Button
-          size="sm"
-          variant={dirty ? "default" : "outline"}
-          disabled={!dirty || updateOccupancy.isPending}
-          className="gap-1.5 shrink-0"
-          onClick={() =>
-            updateOccupancy.mutate({ id: shelter.id, currentOccupancy: Number(value) })
-          }
-        >
-          <Check className="h-3.5 w-3.5" />
-          Update
-        </Button>
-      </div>
+      <Button
+        variant="outline"
+        size="sm"
+        className="gap-1.5 mt-1 font-semibold"
+        onClick={() => setOccOpen(true)}
+      >
+        <Users className="h-3.5 w-3.5" />
+        Update Occupancy
+      </Button>
+
+      <OccupancyDialog shelter={shelter} open={occOpen} onOpenChange={setOccOpen} />
     </Card>
   );
 }

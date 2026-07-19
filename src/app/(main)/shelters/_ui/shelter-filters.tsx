@@ -12,6 +12,7 @@ import {
   Bath,
   X,
   SlidersHorizontal,
+  MapPinned,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -25,6 +26,10 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useDistricts } from "@/lib/hooks/use-locations";
+import {
+  LocationSearchModal,
+  type SelectedLocation,
+} from "@/components/map/location-search-modal";
 
 interface ShelterFiltersProps {
   searchQuery: string;
@@ -36,6 +41,8 @@ interface ShelterFiltersProps {
   capacityFilter: "all" | "available" | "full";
   setCapacityFilter: (val: "all" | "available" | "full") => void;
   totalResults: number;
+  locationFilter: SelectedLocation | null;
+  setLocationFilter: (loc: SelectedLocation | null) => void;
 }
 
 const FACILITIES = [
@@ -58,8 +65,11 @@ export default function ShelterFilters({
   capacityFilter,
   setCapacityFilter,
   totalResults,
+  locationFilter,
+  setLocationFilter,
 }: ShelterFiltersProps) {
   const { data: districts } = useDistricts();
+  const [locationModalOpen, setLocationModalOpen] = useState(false);
 
   const toggleFacility = (id: string) => {
     if (facilityFilters.includes(id)) {
@@ -73,13 +83,15 @@ export default function ShelterFilters({
     searchQuery !== "" ||
     selectedDistrictId !== null ||
     facilityFilters.length > 0 ||
-    capacityFilter !== "all";
+    capacityFilter !== "all" ||
+    locationFilter !== null;
 
   const clearAllFilters = () => {
     setSearchQuery("");
     setSelectedDistrictId(null);
     setFacilityFilters([]);
     setCapacityFilter("all");
+    setLocationFilter(null);
   };
 
   return (
@@ -88,11 +100,13 @@ export default function ShelterFilters({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: 0.1 }}
     >
-      <Card>
-        <div className="flex items-center gap-2 mb-4">
-          <SlidersHorizontal className="size-4 text-primary" />
-          <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-            Find a Shelter
+      <Card className="rounded-3xl border border-border bg-card p-5 md:p-6 shadow-sm">
+        <div className="flex items-center gap-2.5 mb-4">
+          <div className="flex items-center justify-center size-8 rounded-xl bg-primary/10 text-primary">
+            <SlidersHorizontal className="size-4" />
+          </div>
+          <span className="text-sm font-bold text-foreground">
+            Find a Safe Shelter
           </span>
         </div>
 
@@ -113,7 +127,14 @@ export default function ShelterFilters({
             <SelectTrigger className="w-full md:w-52 data-[size=default]:h-11 rounded-xl">
               <div className="flex items-center gap-2">
                 <MapPin className="size-4 text-muted-foreground" />
-                <SelectValue placeholder="All Districts" />
+                <SelectValue placeholder="All Districts">
+                  {(val: string) =>
+                    val === "all" || !val
+                      ? "All Districts"
+                      : (districts?.find((d) => String(d.id) === val)?.nameEn ??
+                        "All Districts")
+                  }
+                </SelectValue>
               </div>
             </SelectTrigger>
             <SelectContent>
@@ -125,7 +146,44 @@ export default function ShelterFilters({
               ))}
             </SelectContent>
           </Select>
+
+          <Button
+            type="button"
+            onClick={() => setLocationModalOpen(true)}
+            className="h-11 rounded-xl gap-2 font-semibold shrink-0 shadow-sm"
+          >
+            <MapPinned className="size-4" />
+            <span className="hidden sm:inline">Find on Map</span>
+            <span className="sm:hidden">Map</span>
+          </Button>
         </div>
+
+        {/* Active location chip */}
+        <AnimatePresence>
+          {locationFilter && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden"
+            >
+              <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 pl-3 pr-1.5 py-1.5">
+                <MapPinned className="size-3.5 text-primary shrink-0" />
+                <span className="text-xs font-semibold text-primary truncate max-w-56">
+                  Near: {locationFilter.label?.split(",")[0] ?? "chosen location"}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setLocationFilter(null)}
+                  className="flex items-center justify-center size-5 rounded-full hover:bg-primary/20 transition-colors"
+                  aria-label="Clear location"
+                >
+                  <X className="size-3 text-primary" />
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <div className="mt-4 pt-4 border-t border-border/60 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
           <div className="flex items-center gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] scrollbar-none pb-1 xl:pb-0">
@@ -217,6 +275,14 @@ export default function ShelterFilters({
           </div>
         </div>
       </Card>
+
+      <LocationSearchModal
+        open={locationModalOpen}
+        onOpenChange={setLocationModalOpen}
+        onSelect={setLocationFilter}
+        title="Find shelters near a location"
+        description="Search a place, tap the map, or use your current location to see the nearest shelters."
+      />
     </motion.div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   MapContainer,
   TileLayer,
@@ -40,6 +40,28 @@ interface AlertsMapProps {
 }
 
 export default function AlertsMap({ alerts, onSelectAlert }: AlertsMapProps) {
+  // Ensure the Leaflet container is created only once, after mount, so its
+  // internal panes exist before children (TileLayer) attach — avoids the
+  // "Cannot read properties of undefined (reading 'appendChild')" crash on
+  // React 19 double-invoke / container reuse.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    // Defer one frame so the container is fully in the DOM before Leaflet
+    // initialises its panes (avoids the TileLayer appendChild crash).
+    const id = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <div className="w-full h-87.5 md:h-180 rounded-xl border border-border bg-muted/20 flex items-center justify-center">
+        <span className="text-xs text-muted-foreground font-bold uppercase tracking-widest">
+          Loading map...
+        </span>
+      </div>
+    );
+  }
+
   return (
     <div className="relative w-full h-87.5 md:h-180 rounded-xl overflow-hidden border border-border shadow-sm z-10">
       <MapContainer center={BANGLADESH_CENTER} zoom={7} className="w-full h-full">

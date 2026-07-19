@@ -2,7 +2,6 @@
 
 import { useState, useRef, ChangeEvent } from "react";
 import { useFormContext, Controller } from "react-hook-form";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   LifeBuoy,
   UtensilsCrossed,
@@ -11,18 +10,15 @@ import {
   Phone,
   X,
   Camera,
-  XCircle,
   Users,
   AlertTriangle,
   FileText,
-  Sparkles,
   Loader2,
   MapPinned,
   UserRound,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -35,13 +31,8 @@ import { useDistricts } from "@/lib/hooks/use-locations";
 import { uploadImageToCloudinary } from "@/lib/cloudinary";
 import { SOSFormData } from "./types";
 
-interface SOSFormProps {
-  onSubmit: () => void;
-}
-
-export default function SOSForm({ onSubmit }: SOSFormProps) {
+export default function SOSForm() {
   const { watch, setValue, register, control } = useFormContext<SOSFormData>();
-  const [phoneTouched, setPhoneTouched] = useState(false);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -51,8 +42,7 @@ export default function SOSForm({ onSubmit }: SOSFormProps) {
   const helpTypes = watch("helpTypes");
   const phone = watch("phone");
   const description = watch("description");
-  const photoFile = watch("photoFile");
-  const photoPreview = watch("photoPreview");
+  const photoPreviews = watch("photoPreviews");
 
   const handlePeopleSelect = (value: "1" | "2-5" | "5-10" | "10+") => {
     setValue("peopleCount", peopleCount === value ? null : value, {
@@ -68,11 +58,6 @@ export default function SOSForm({ onSubmit }: SOSFormProps) {
     setValue("helpTypes", updated, { shouldValidate: true });
   };
 
-  const isPhoneInvalid =
-    phoneTouched &&
-    phone.length > 0 &&
-    (!phone.startsWith("01") || phone.length !== 11);
-
   const handlePhoneChange = (e: ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.replace(/\D/g, "");
     if (val.length <= 11) {
@@ -81,31 +66,36 @@ export default function SOSForm({ onSubmit }: SOSFormProps) {
   };
 
   const handlePhotoUpload = async (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files ?? []);
+    if (files.length === 0) return;
 
-    setValue("photoFile", file);
-    setValue("photoPreview", URL.createObjectURL(file));
+    // Show local previews immediately
+    const newPreviews = files.map((f) => URL.createObjectURL(f));
+    setValue("photoPreviews", [...watch("photoPreviews"), ...newPreviews]);
     setIsUploadingPhoto(true);
 
     try {
-      const url = await uploadImageToCloudinary(file);
-      setValue("photoUrl", url);
+      const urls = await Promise.all(
+        files.map((f) => uploadImageToCloudinary(f)),
+      );
+      setValue("photoUrls", [...watch("photoUrls"), ...urls]);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Photo upload failed");
-      removePhoto();
     } finally {
       setIsUploadingPhoto(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
-  const removePhoto = () => {
-    setValue("photoFile", null);
-    setValue("photoPreview", null);
-    setValue("photoUrl", null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+  const removePhoto = (index: number) => {
+    setValue(
+      "photoPreviews",
+      watch("photoPreviews").filter((_, i) => i !== index),
+    );
+    setValue(
+      "photoUrls",
+      watch("photoUrls").filter((_, i) => i !== index),
+    );
   };
 
   const helpTypeOptions = [
@@ -164,18 +154,18 @@ export default function SOSForm({ onSubmit }: SOSFormProps) {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
             </span>
-            Live SOS Transmitter
+            Emergency Help Request
           </div>
           <div className="flex items-center gap-4">
             <div className="text-5xl font-black tracking-tighter text-red-500/20 font-mono select-none">
-              02
+              2
             </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground uppercase">
-                Situation Logistics
+              <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">
+                Tell Us About Your Situation
               </h1>
               <p className="text-xs sm:text-sm text-muted-foreground mt-1 max-w-xl">
-                Configure telemetry assets and deploy support personnel based on active ground data below.
+                Answer a few simple questions so rescuers know how to help you.
               </p>
             </div>
           </div>
@@ -191,10 +181,10 @@ export default function SOSForm({ onSubmit }: SOSFormProps) {
               </div>
               <div className="flex flex-col">
                 <h3 className="text-sm font-black uppercase tracking-wider text-foreground">
-                  District
+                  Your District
                 </h3>
                 <p className="text-xs text-muted-foreground">
-                  Which district is this SOS request in?
+                  Which district are you in?
                 </p>
               </div>
             </div>
@@ -208,7 +198,12 @@ export default function SOSForm({ onSubmit }: SOSFormProps) {
                   onValueChange={(val) => field.onChange(Number(val))}
                 >
                   <SelectTrigger className="w-full data-[size=default]:h-12 rounded-xl">
-                    <SelectValue placeholder="Select district..." />
+                    <SelectValue placeholder="Select district...">
+                      {(val: string) =>
+                        districts?.find((d) => String(d.id) === val)?.nameEn ??
+                        "Select district..."
+                      }
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {districts?.map((district) => (
@@ -229,10 +224,10 @@ export default function SOSForm({ onSubmit }: SOSFormProps) {
               </div>
               <div className="flex flex-col">
                 <h3 className="text-sm font-black uppercase tracking-wider text-foreground">
-                  Headcount Verification
+                  How Many People Need Help?
                 </h3>
                 <p className="text-xs text-muted-foreground">
-                  Identify the quantity of individuals awaiting physical intervention
+                  Count everyone who needs to be rescued
                 </p>
               </div>
             </div>
@@ -287,10 +282,10 @@ export default function SOSForm({ onSubmit }: SOSFormProps) {
                 </div>
                 <div className="flex flex-col">
                   <h3 className="text-sm font-black uppercase tracking-wider text-foreground">
-                    Required Assistance Classes
+                    What Help Do You Need?
                   </h3>
                   <p className="text-xs text-muted-foreground">
-                    Specify active needs to calculate field resource payloads
+                    Tap all the things you need — you can choose more than one
                   </p>
                 </div>
               </div>
@@ -348,10 +343,10 @@ export default function SOSForm({ onSubmit }: SOSFormProps) {
               </div>
               <div className="flex flex-col">
                 <h3 className="text-sm font-black uppercase tracking-wider text-foreground">
-                  Ground Narrative
+                  Anything Else? (Optional)
                 </h3>
                 <p className="text-xs text-muted-foreground">
-                  Provide context regarding access barriers, environmental issues, or urgent status
+                  Tell rescuers anything important — where you are hiding, injuries, children, etc.
                 </p>
               </div>
             </div>
@@ -361,12 +356,12 @@ export default function SOSForm({ onSubmit }: SOSFormProps) {
                 rows={4}
                 maxLength={500}
                 {...register("description")}
-                placeholder="Detail current status: e.g. flash waters rising fast, on second floor roof structure, medical assistance needed for children..."
+                placeholder="Example: Water is rising fast. We are on the roof. Two small children with us and one elderly person who cannot walk."
                 className="resize-none border-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-sm p-4 placeholder:text-muted-foreground/40 shadow-none"
               />
               <div className="flex items-center justify-end p-2 bg-muted/20 rounded-xl border-t border-border/40">
                 <span className="text-[10px] font-mono font-bold tracking-wider text-muted-foreground/60 uppercase">
-                  Character Counter: {description.length} / 500
+                  {description.length} / 500
                 </span>
               </div>
             </div>
@@ -380,7 +375,7 @@ export default function SOSForm({ onSubmit }: SOSFormProps) {
                 Your Name
               </h3>
               <p className="text-xs text-muted-foreground">
-                So rescuers know who they&apos;re looking for
+                So rescuers know who they are looking for
               </p>
             </div>
             <div className="relative flex items-center rounded-xl overflow-hidden border border-border/60 bg-background focus-within:ring-2 focus-within:ring-red-500/20 focus-within:border-red-500 transition-all">
@@ -396,10 +391,10 @@ export default function SOSForm({ onSubmit }: SOSFormProps) {
           <div className="flex flex-col gap-5 p-6 rounded-3xl border border-border/60 bg-muted/5">
             <div className="flex flex-col gap-1">
               <h3 className="text-base font-black uppercase">
-                Tactical Contact Line
+                Phone Number
               </h3>
               <p className="text-xs text-muted-foreground">
-                An active Bangladeshi connection is required for dynamic triage verification
+                A working phone number so the rescue team can call you
               </p>
             </div>
 
@@ -416,28 +411,21 @@ export default function SOSForm({ onSubmit }: SOSFormProps) {
                     maxLength={11}
                     value={phone}
                     onChange={handlePhoneChange}
-                    onBlur={() => setPhoneTouched(true)}
                     placeholder="01XXXXXXXXX"
                     className="w-full h-12 pl-12 pr-4 border-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-sm font-mono tracking-widest shadow-none rounded-none"
                   />
                 </div>
               </div>
-              {isPhoneInvalid && (
-                <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-[10px] text-red-500 font-black uppercase tracking-wider">
-                  <XCircle className="size-4 shrink-0" />
-                  Invalid telephone structure
-                </div>
-              )}
             </div>
           </div>
 
           <div className="flex flex-col gap-5 p-6 rounded-3xl border border-border/60 bg-muted/5">
             <div className="flex flex-col gap-1">
               <h3 className="text-base font-black uppercase">
-                Visual Evidence
+                Add Photos (Optional)
               </h3>
               <p className="text-xs text-muted-foreground">
-                Optional upload to confirm topography or water flow rates
+                Photos of the water or your location help rescuers. You can add several.
               </p>
             </div>
 
@@ -446,71 +434,51 @@ export default function SOSForm({ onSubmit }: SOSFormProps) {
               ref={fileInputRef}
               accept="image/*"
               capture="environment"
+              multiple
               className="hidden"
               onChange={handlePhotoUpload}
             />
 
-            <AnimatePresence mode="wait">
-              {!photoPreview ? (
-                <button
-                  key="upload"
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-full aspect-video border-2 border-dashed border-border/60 hover:border-primary/60 rounded-2xl p-6 text-center cursor-pointer bg-background hover:bg-muted/10 transition-all flex flex-col items-center justify-center gap-3 group"
-                >
-                  <div className="size-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center group-hover:scale-105 transition-transform">
-                    <Camera className="size-5 text-primary" />
-                  </div>
-                  <div className="flex flex-col gap-0.5">
-                    <span className="text-xs font-black uppercase tracking-wider text-foreground">
-                      Deploy Image File
-                    </span>
-                    <span className="text-[10px] text-muted-foreground">
-                      Capture live or import gallery
-                    </span>
-                  </div>
-                </button>
-              ) : (
+            <div className="grid grid-cols-3 gap-2.5">
+              {photoPreviews.map((preview, index) => (
                 <div
-                  key="preview"
-                  className="relative w-full aspect-video rounded-2xl overflow-hidden border border-border/60 bg-background"
+                  key={preview}
+                  className="relative aspect-square rounded-xl overflow-hidden border border-border/60 bg-background group"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={photoPreview}
-                    alt="SOS Field Telemetry"
+                    src={preview}
+                    alt={`SOS photo ${index + 1}`}
                     className="h-full w-full object-cover"
                   />
-                  <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/30 to-transparent flex flex-col justify-end p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex flex-col gap-0.5">
-                        {isUploadingPhoto ? (
-                          <span className="text-[9px] font-black uppercase tracking-widest text-white/90 flex items-center gap-1">
-                            <Loader2 className="size-3 animate-spin" /> Uploading...
-                          </span>
-                        ) : (
-                          <span className="text-[9px] font-black uppercase tracking-widest text-white/90 flex items-center gap-1">
-                            <Sparkles className="size-3 text-amber-400" /> Ground Telemetry Ready
-                          </span>
-                        )}
-                        <span className="text-[9px] font-mono text-white/60">
-                          {photoFile?.name?.substring(0, 20)}...
-                        </span>
-                      </div>
-                      <Button
-                        type="button"
-                        onClick={removePhoto}
-                        variant="destructive"
-                        size="icon"
-                        className="rounded-xl size-8 shrink-0 shadow-none border border-red-500/20"
-                      >
-                        <X className="size-4" />
-                      </Button>
-                    </div>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removePhoto(index)}
+                    className="absolute top-1 right-1 size-6 rounded-lg bg-black/60 text-white flex items-center justify-center hover:bg-destructive transition-colors"
+                    aria-label="Remove photo"
+                  >
+                    <X className="size-3.5" />
+                  </button>
                 </div>
-              )}
-            </AnimatePresence>
+              ))}
+
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="aspect-square border-2 border-dashed border-border/60 hover:border-primary/60 rounded-xl text-center cursor-pointer bg-background hover:bg-muted/10 transition-all flex flex-col items-center justify-center gap-1.5 group"
+              >
+                {isUploadingPhoto ? (
+                  <Loader2 className="size-5 text-primary animate-spin" />
+                ) : (
+                  <div className="size-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center group-hover:scale-105 transition-transform">
+                    <Camera className="size-4 text-primary" />
+                  </div>
+                )}
+                <span className="text-[10px] font-bold text-muted-foreground">
+                  {photoPreviews.length > 0 ? "Add more" : "Add photo"}
+                </span>
+              </button>
+            </div>
           </div>
         </div>
       </div>

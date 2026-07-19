@@ -85,7 +85,8 @@ export function DataTable<T>({
 
   return (
     <>
-      <Card className="hidden md:block rounded-lg border border-border bg-card overflow-hidden">
+      {/* Desktop: table scrolls horizontally *inside* the card, never the page. */}
+      <Card className="hidden md:block rounded-2xl border border-border bg-card overflow-hidden w-full max-w-full min-w-0">
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent border-border">
@@ -93,7 +94,7 @@ export function DataTable<T>({
                 <TableHead
                   key={col.key}
                   className={cn(
-                    "bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground h-11",
+                    "bg-muted/50 text-[11px] font-bold uppercase tracking-wider text-muted-foreground h-11 first:pl-5 last:pr-5",
                     col.align === "right" && "text-right",
                   )}
                 >
@@ -111,14 +112,18 @@ export function DataTable<T>({
                 transition={{ duration: 0.25, delay: Math.min(i * 0.03, 0.3) }}
                 onClick={onRowClick ? () => onRowClick(row) : undefined}
                 className={cn(
-                  "border-b border-border/60 transition-colors even:bg-muted/20 hover:bg-primary/5",
+                  "border-b border-border/50 transition-colors hover:bg-primary/4",
                   onRowClick && "cursor-pointer",
                 )}
               >
                 {columns.map((col) => (
                   <TableCell
                     key={col.key}
-                    className={cn("py-3", col.align === "right" && "text-right", col.className)}
+                    className={cn(
+                      "py-3.5 first:pl-5 last:pr-5",
+                      col.align === "right" && "text-right",
+                      col.className,
+                    )}
                   >
                     {col.render(row)}
                   </TableCell>

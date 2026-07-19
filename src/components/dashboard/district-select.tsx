@@ -27,7 +27,11 @@ export function DistrictSelect({
       disabled={isLoading}
     >
       <SelectTrigger className="w-full data-[size=default]:h-10 rounded-lg">
-        <SelectValue placeholder={isLoading ? "Loading districts..." : placeholder} />
+        <SelectValue placeholder={isLoading ? "Loading districts..." : placeholder}>
+          {(val: string) =>
+            districts?.find((d) => String(d.id) === val)?.nameEn ?? placeholder
+          }
+        </SelectValue>
       </SelectTrigger>
       <SelectContent>
         {districts?.map((district) => (

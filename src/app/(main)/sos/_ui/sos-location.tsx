@@ -26,7 +26,7 @@ const MapFallback = () => (
       <MapPin className="size-5 animate-bounce" />
     </div>
     <span className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
-      Connecting to Grid Map...
+      Loading the map...
     </span>
   </Skeleton>
 );
@@ -73,14 +73,14 @@ export default function SOSLocation({
           lng: position.coords.longitude,
         });
         setDetectState("success");
-        toast.success("GPS Coordinate Sync Completed");
+        toast.success("Location found");
         setTimeout(() => setDetectState("idle"), 1500);
       },
       () => {
         setDetectState("error");
-        toast.error("Location Access Denied", {
+        toast.error("Could not find your location", {
           description:
-            "Please permit location browser permissions or list nearby landmarks.",
+            "Please allow location access, or tap your spot on the map.",
         });
         setTimeout(() => setDetectState("idle"), 2000);
       },
@@ -98,23 +98,22 @@ export default function SOSLocation({
       >
         <div className="flex items-start gap-3">
           <div className="flex items-center justify-center size-9 rounded-xl bg-destructive text-destructive-foreground font-black text-sm border border-white/10 shrink-0">
-            01
+            1
           </div>
           <div className="flex flex-col">
-            <h2 className="text-sm sm:text-base font-black text-foreground tracking-tight uppercase">
-              Incident Ground Map
+            <h2 className="text-base sm:text-lg font-black text-foreground tracking-tight">
+              Where Are You?
             </h2>
             <p className="text-xs text-muted-foreground">
-              Define the coordinate sector for responder delivery
+              Tap your location on the map, or press the button to find it automatically
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2 self-start sm:self-auto px-3 py-1.5 rounded-full bg-muted/40 border border-border/60 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
           <Radio className="size-3 text-destructive animate-pulse" />
-          <span>Status:</span>
           <span className={location ? "text-emerald-500" : "text-amber-500"}>
-            {location ? "GPS Anchored" : "Awaiting Anchor"}
+            {location ? "Location set" : "Not set yet"}
           </span>
         </div>
       </motion.div>
@@ -124,7 +123,7 @@ export default function SOSLocation({
         transition={{ delay: 0.05 }}
       >
         <Card className="rounded-2xl overflow-hidden border border-border/80 bg-card/30 backdrop-blur-lg flex flex-col relative shadow-none">
-          <div className="w-full h-64 md:h-72 relative z-10 border-b border-border/80 bg-muted/20">
+          <div className="w-full h-80 md:h-96 relative z-10 border-b border-border/80 bg-muted/20">
             <DynamicSOSMap location={location} setLocation={setLocation} />
             <div className="absolute bottom-4 left-0 right-0 flex justify-center z-1001 pointer-events-none">
               <div className="pointer-events-auto">
@@ -147,25 +146,25 @@ export default function SOSLocation({
                       {detectState === "detecting" && (
                         <>
                           <Loader2 className="size-3.5 animate-spin" />
-                          <span>Pinging Satellites...</span>
+                          <span>Finding you...</span>
                         </>
                       )}
                       {detectState === "success" && (
                         <>
                           <CheckCircle className="size-3.5" />
-                          <span>Anchor Secured</span>
+                          <span>Location found</span>
                         </>
                       )}
                       {detectState === "error" && (
                         <>
                           <XCircle className="size-3.5" />
-                          <span>Pinging Refused</span>
+                          <span>Try again</span>
                         </>
                       )}
                       {detectState === "idle" && (
                         <>
                           <Crosshair className="size-3.5" />
-                          <span>Auto-Detect My GPS</span>
+                          <span>Use My Current Location</span>
                         </>
                       )}
                     </motion.div>
@@ -191,16 +190,15 @@ export default function SOSLocation({
                     </div>
                     <div className="flex flex-col">
                       <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">
-                        Telemetry Lock Verified
+                        Your location is set
                       </span>
                       <span className="text-xs font-mono text-foreground font-bold tracking-tight mt-0.5">
-                        {location.lat.toFixed(6)}° N , {location.lng.toFixed(6)}
-                        ° E
+                        {location.lat.toFixed(5)}, {location.lng.toFixed(5)}
                       </span>
                     </div>
                   </div>
                   <span className="hidden sm:inline-flex px-2 py-0.5 text-[9px] font-black text-emerald-600 bg-emerald-500/10 border border-emerald-500/20 rounded-md uppercase tracking-wider">
-                    ±4 Meters Acc
+                    Ready
                   </span>
                 </motion.div>
               ) : (
@@ -214,22 +212,22 @@ export default function SOSLocation({
                   </div>
                   <div className="flex flex-col">
                     <span className="text-[10px] font-bold text-amber-600 uppercase tracking-widest">
-                      Unmapped Coordinate Sector
+                      Location not set yet
                     </span>
                     <span className="text-xs text-muted-foreground mt-0.5">
-                      Use the button above or tap the map to anchor coordinates.
+                      Tap your spot on the map above, or press &ldquo;Use My Current Location&rdquo;.
                     </span>
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            {/* Landmarking Manual Details Field */}
+            {/* Optional nearby-landmark note */}
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between">
-                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
+                <label className="text-[11px] font-bold text-muted-foreground flex items-center gap-1.5">
                   <AlertCircle className="size-3.5 text-muted-foreground/60" />{" "}
-                  Village landmarks, floor level, or mosque name
+                  Nearby landmark <span className="font-normal text-muted-foreground/60">(optional)</span>
                 </label>
                 <span className="text-[10px] text-muted-foreground font-semibold">
                   {address.length} / 200
@@ -241,27 +239,9 @@ export default function SOSLocation({
                 maxLength={200}
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
-                placeholder="e.g., Water is on the ground level. We are on the 2nd floor of the red brick school building next to the mosque."
+                placeholder="Example: red brick school next to the mosque, we are on the 2nd floor."
                 className="resize-none focus-visible:ring-destructive/30 focus-visible:ring-1 focus-visible:border-destructive text-xs sm:text-sm bg-background/50 border-border/80 rounded-xl p-3 placeholder:text-muted-foreground/50 transition-all shadow-none"
               />
-
-              {!location && !address.trim() && (
-                <motion.div
-                  initial={{ opacity: 0, y: 3 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-destructive/4 border border-destructive/20 rounded-xl p-3 flex items-start gap-2.5 mt-1"
-                >
-                  <span className="relative flex size-2 shrink-0 mt-1">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-destructive" />
-                  </span>
-                  <span className="text-xs text-destructive/90 font-bold leading-normal">
-                    Ground delivery needs coordinates. Please auto-detect
-                    location, pin on the map, or write landmarks so rescuers can
-                    reach you.
-                  </span>
-                </motion.div>
-              )}
             </div>
           </div>
         </Card>

@@ -5,7 +5,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { MessageSquareWarning, Send, Bug, Lightbulb, AlertOctagon, HelpCircle, Mail } from "lucide-react";
+import { useState } from "react";
+import { MessageSquareWarning, Send, Bug, ShieldAlert, AlertOctagon, HelpCircle, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,26 +14,28 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { PublicHero } from "@/components/public/public-hero";
 import { cn } from "@/lib/utils";
-
-const REPORT_EMAIL = "support@floodaid.bd";
+import { useSubmitFeedback, type ReportCategory } from "@/lib/hooks/use-feedback";
 
 const CATEGORIES = [
-  { id: "bug", label: "Bug / Error", icon: Bug },
-  { id: "data", label: "Incorrect Data", icon: AlertOctagon },
-  { id: "idea", label: "Feature Idea", icon: Lightbulb },
-  { id: "other", label: "Something Else", icon: HelpCircle },
+  { id: "BUG", label: "Bug / Error", icon: Bug },
+  { id: "DATA_ERROR", label: "Incorrect Data", icon: AlertOctagon },
+  { id: "SAFETY", label: "Safety Concern", icon: ShieldAlert },
+  { id: "OTHER", label: "Something Else", icon: HelpCircle },
 ] as const;
 
 const reportSchema = z.object({
   name: z.string().min(2, "Please enter your name"),
-  email: z.email("Enter a valid email"),
-  category: z.enum(["bug", "data", "idea", "other"]),
+  email: z.union([z.literal(""), z.email("Enter a valid email")]).optional(),
+  category: z.enum(["BUG", "DATA_ERROR", "SAFETY", "OTHER"]),
   message: z.string().min(10, "Please describe the issue (at least 10 characters)"),
 });
 
 type ReportValues = z.infer<typeof reportSchema>;
 
 export default function ReportPage() {
+  const submitFeedback = useSubmitFeedback();
+  const [submitted, setSubmitted] = useState(false);
+
   const {
     register,
     handleSubmit,
@@ -41,16 +44,21 @@ export default function ReportPage() {
     formState: { errors },
   } = useForm<ReportValues>({
     resolver: zodResolver(reportSchema),
-    defaultValues: { name: "", email: "", category: "bug", message: "" },
+    defaultValues: { name: "", email: "", category: "BUG", message: "" },
   });
 
-  const onSubmit = (values: ReportValues) => {
-    const categoryLabel = CATEGORIES.find((c) => c.id === values.category)?.label ?? values.category;
-    const subject = `[FloodAid Report] ${categoryLabel} — from ${values.name}`;
-    const body = `Name: ${values.name}\nEmail: ${values.email}\nCategory: ${categoryLabel}\n\n${values.message}`;
-    window.location.href = `mailto:${REPORT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    toast.success("Opening your email app to send the report…");
+  const onSubmit = async (values: ReportValues) => {
+    await submitFeedback.mutateAsync({
+      name: values.name,
+      email: values.email || undefined,
+      category: values.category as ReportCategory,
+      message: values.message,
+    });
+    toast.success("Report sent — thank you!", {
+      description: "Our team will review it shortly.",
+    });
     reset();
+    setSubmitted(true);
   };
 
   return (
@@ -71,6 +79,22 @@ export default function ReportPage() {
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
           >
             <Card className="rounded-3xl border border-border bg-card p-6 md:p-8">
+              {submitted ? (
+                <div className="flex flex-col items-center text-center gap-4 py-8">
+                  <div className="flex items-center justify-center size-16 rounded-full bg-emerald-500/10 text-emerald-500">
+                    <CheckCircle2 className="size-8" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-black text-foreground">Report received</h2>
+                    <p className="text-sm text-muted-foreground mt-1 max-w-sm">
+                      Thank you for helping us keep FloodAid accurate. Our team will review your report.
+                    </p>
+                  </div>
+                  <Button variant="outline" onClick={() => setSubmitted(false)} className="font-semibold">
+                    Send another report
+                  </Button>
+                </div>
+              ) : (
               <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1.5">
@@ -79,7 +103,7 @@ export default function ReportPage() {
                     {errors.name && <span className="text-xs text-destructive">{errors.name.message}</span>}
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="email">Email <span className="font-normal text-muted-foreground">(optional)</span></Label>
                     <Input id="email" type="email" placeholder="you@example.com" {...register("email")} />
                     {errors.email && <span className="text-xs text-destructive">{errors.email.message}</span>}
                   </div>
@@ -128,16 +152,17 @@ export default function ReportPage() {
                   {errors.message && <span className="text-xs text-destructive">{errors.message.message}</span>}
                 </div>
 
-                <Button type="submit" size="xl" className="font-bold gap-2 mt-1">
+                <Button
+                  type="submit"
+                  size="xl"
+                  disabled={submitFeedback.isPending}
+                  className="font-bold gap-2 mt-1"
+                >
                   <Send className="h-4 w-4" />
-                  Send Report
+                  {submitFeedback.isPending ? "Sending…" : "Send Report"}
                 </Button>
-
-                <p className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
-                  <Mail className="h-3.5 w-3.5" />
-                  This opens your email app addressed to {REPORT_EMAIL}
-                </p>
               </form>
+              )}
             </Card>
           </motion.div>
         </div>

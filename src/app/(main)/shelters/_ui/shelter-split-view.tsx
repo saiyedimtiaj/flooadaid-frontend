@@ -23,6 +23,8 @@ interface ShelterSplitViewProps {
   userLocation: { lat: number; lng: number } | null;
   setUserLocation: (loc: { lat: number; lng: number } | null) => void;
   onClearFilters: () => void;
+  /** When true (a location was chosen via the map/search modal), always sort nearest-first. */
+  forceNearest?: boolean;
 }
 
 function calculateDistance(
@@ -51,13 +53,16 @@ export default function ShelterSplitView({
   userLocation,
   setUserLocation,
   onClearFilters,
+  forceNearest = false,
 }: ShelterSplitViewProps) {
   const [nearestFirst, setNearestFirst] = useState(false);
   const [activeTab, setActiveTab] = useState<"list" | "map">("list");
   const cardRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
+  const sortByDistance = (nearestFirst || forceNearest) && userLocation;
+
   const sortedShelters = useMemo(() => {
-    if (nearestFirst && userLocation) {
+    if (sortByDistance && userLocation) {
       return [...shelters].sort((a, b) => {
         const distA = calculateDistance(
           userLocation.lat,
@@ -75,7 +80,7 @@ export default function ShelterSplitView({
       });
     }
     return shelters;
-  }, [shelters, nearestFirst, userLocation]);
+  }, [shelters, sortByDistance, userLocation]);
 
   useEffect(() => {
     if (selectedShelterId) {

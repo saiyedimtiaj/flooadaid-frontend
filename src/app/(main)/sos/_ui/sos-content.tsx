@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -9,6 +9,7 @@ import SOSLocation from "./sos-location";
 import SOSForm from "./sos-form";
 import SOSSubmit from "./sos-submit";
 import SOSTracker from "@/components/sos/sos-tracker";
+import { NearbyHelpPanel } from "@/components/sos/nearby-help-panel";
 import SOSSidebarInfo from "./sos-sidebar-info";
 import { sosFormSchema, SOSFormData } from "./types";
 import { useCreateSos, useSosTracking } from "@/lib/hooks/use-sos";
@@ -20,7 +21,7 @@ const LAST_SOS_ID_KEY = "floodaid:last-sos-id";
 export default function SOSContent() {
   const form = useForm<SOSFormData>({
     resolver: zodResolver(sosFormSchema),
-    mode: "onChange",
+    mode: "onSubmit",
     defaultValues: {
       name: "",
       districtId: null,
@@ -28,9 +29,8 @@ export default function SOSContent() {
       peopleCount: null,
       helpTypes: [],
       description: "",
-      photoFile: null,
-      photoPreview: null,
-      photoUrl: null,
+      photoPreviews: [],
+      photoUrls: [],
     },
   });
 
@@ -43,22 +43,21 @@ export default function SOSContent() {
   const { data: trackedSos, isLoading: isTrackingLoading } = useSosTracking(generatedSosId);
 
   const formValues = form.watch();
-  const isFormValid = form.formState.isValid && location !== null;
 
   const getMissingRequirements = () => {
     const missing: string[] = [];
     if (formValues.name.trim().length < 2) missing.push("Your name");
-    if (formValues.districtId === null) missing.push("District");
-    if (location === null) missing.push("Location sharing");
-    if (formValues.peopleCount === null) missing.push("Number of people");
-    if (formValues.helpTypes.length === 0) missing.push("Type of help needed");
+    if (formValues.districtId === null) missing.push("Your district");
+    if (location === null) missing.push("Your location on the map");
+    if (formValues.peopleCount === null) missing.push("How many people");
+    if (formValues.helpTypes.length === 0) missing.push("What help you need");
     if (!/^01\d{9}$/.test(formValues.phone)) {
-      missing.push("Valid phone number");
+      missing.push("A valid phone number");
     }
     return missing;
   };
 
-  const handleSubmit = form.handleSubmit(async (values) => {
+  const submitSos = async (values: SOSFormData) => {
     if (location === null || values.districtId === null) return;
 
     try {
@@ -72,7 +71,8 @@ export default function SOSContent() {
         peopleCount: values.peopleCount!,
         helpType: values.helpTypes.map((t) => t.toLowerCase()) as HelpType[],
         description: values.description || undefined,
-        photoUrl: values.photoUrl ?? undefined,
+        photoUrl: values.photoUrls[0] ?? undefined,
+        photoUrls: values.photoUrls.length > 0 ? values.photoUrls : undefined,
       });
 
       setGeneratedSosId(sos.id);
@@ -89,7 +89,22 @@ export default function SOSContent() {
     } catch (error) {
       toast.error(error instanceof ApiError ? error.message : "Failed to submit SOS request. Please try again.");
     }
-  });
+  };
+
+  // Show all missing fields in a single toast on submit (nothing inline before submit).
+  const handleSubmit = (e?: FormEvent) => {
+    e?.preventDefault();
+    const missing = getMissingRequirements();
+    if (missing.length > 0) {
+      toast.error("Please complete your SOS", {
+        description: `Still needed: ${missing.join(", ")}.`,
+      });
+      // trigger RHF validation so field-level focus works, but no eager inline text
+      void form.trigger();
+      return;
+    }
+    void form.handleSubmit(submitSos)();
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -105,7 +120,7 @@ export default function SOSContent() {
                   address={address}
                   setAddress={setAddress}
                 />
-                <SOSForm onSubmit={handleSubmit} />
+                <SOSForm />
               </div>
               <div className="xl:col-span-4 xl:sticky xl:top-8">
                 <SOSSidebarInfo />
@@ -116,9 +131,7 @@ export default function SOSContent() {
           <div className="w-full">
             <SOSSubmit
               isSubmitted={hasSubmitted}
-              missingRequirements={getMissingRequirements()}
               isSubmitting={createSos.isPending}
-              isValid={isFormValid}
               onSubmit={handleSubmit}
               sosId={generatedSosId}
               peopleCount={formValues.peopleCount}
@@ -126,6 +139,12 @@ export default function SOSContent() {
               address={address}
             />
           </div>
+
+          {hasSubmitted && (
+            <div className="w-full max-w-md mx-auto">
+              <NearbyHelpPanel location={location} />
+            </div>
+          )}
         </FormProvider>
         <SOSTracker isVisible={hasSubmitted} sos={trackedSos} isLoading={isTrackingLoading} />
       </main>

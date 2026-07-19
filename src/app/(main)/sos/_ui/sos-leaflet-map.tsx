@@ -106,10 +106,10 @@ export default function SOSLeafletMap({ location, setLocation }: SOSLeafletMapPr
       {!location && (
         <div className="absolute inset-0 bg-background/60 backdrop-blur-[1px] flex flex-col items-center justify-center p-4 text-center z-1000 pointer-events-none">
           <span className="text-sm font-semibold text-foreground">
-            No location selected
+            No location selected yet
           </span>
           <p className="text-xs text-muted-foreground mt-1 max-w-60">
-            Tap anywhere on the map or click the "Detect My Location" button below.
+            Tap anywhere on the map, or press &ldquo;Use My Current Location&rdquo; below.
           </p>
         </div>
       )}

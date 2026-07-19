@@ -49,9 +49,9 @@ export function DashboardShell({
   return (
     <SidebarProvider>
       <DashboardSidebar role={navRole} />
-      <SidebarInset>
+      <SidebarInset className="min-w-0">
         <DashboardTopbar user={user} />
-        <div className="flex-1 p-4">{children}</div>
+        <div className="flex-1 min-w-0 max-w-full p-4">{children}</div>
       </SidebarInset>
     </SidebarProvider>
   );

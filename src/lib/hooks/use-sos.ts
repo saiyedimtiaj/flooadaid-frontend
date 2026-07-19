@@ -22,13 +22,29 @@ export interface CreateSosInput {
   peopleCount: PeopleCount;
   helpType: HelpType[];
   description?: string;
+  /** Single photo — kept for backward compatibility with the current backend. */
   photoUrl?: string;
+  /** Multiple photos — used once the backend accepts an array (Phase 2). */
+  photoUrls?: string[];
 }
 
 export function useCreateSos() {
   return useMutation({
     mutationFn: (data: CreateSosInput) => api.post<SosRequest>("/sos", data),
     onError: (error) => toast.error(error instanceof ApiError ? error.message : "Failed to submit SOS request"),
+  });
+}
+
+/** Admin/volunteer entering an SOS on behalf of someone (bad-network areas). */
+export function useCreateManualSos() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateSosInput) => api.post<SosRequest>("/sos/manual", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["sos"] });
+      toast.success("Request recorded");
+    },
+    onError: (error) => toast.error(error instanceof ApiError ? error.message : "Failed to record request"),
   });
 }
 

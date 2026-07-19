@@ -10,6 +10,7 @@ import ShelterDetailSheet from "./shelter-detail-sheet"
 import ShelterSosCta from "./shelter-sos-cta"
 import { useShelters } from "@/lib/hooks/use-shelters"
 import type { Shelter } from "@/lib/types/api"
+import type { SelectedLocation } from "@/components/map/location-search-modal"
 
 const FACILITY_KEY_MAP: Record<string, keyof Shelter> = {
   food: "hasFood",
@@ -28,6 +29,13 @@ export default function SheltersContent() {
   const [selectedDistrictId, setSelectedDistrictId] = useState<number | null>(null)
   const [facilityFilters, setFacilityFilters] = useState<string[]>([])
   const [capacityFilter, setCapacityFilter] = useState<"all" | "available" | "full">("all")
+  const [locationFilter, setLocationFilterState] = useState<SelectedLocation | null>(null)
+
+  // A location chosen from the map/search modal also drives distance sorting.
+  const setLocationFilter = (loc: SelectedLocation | null) => {
+    setLocationFilterState(loc)
+    setUserLocation(loc ? { lat: loc.lat, lng: loc.lng } : null)
+  }
 
   const { data, isLoading } = useShelters({ limit: 100, districtId: selectedDistrictId ?? undefined })
   const shelters = useMemo(() => data?.data ?? [], [data]);
@@ -79,6 +87,7 @@ export default function SheltersContent() {
     setSelectedDistrictId(null)
     setFacilityFilters([])
     setCapacityFilter("all")
+    setLocationFilter(null)
   }
 
   return (
@@ -97,6 +106,8 @@ export default function SheltersContent() {
         capacityFilter={capacityFilter}
         setCapacityFilter={setCapacityFilter}
         totalResults={filteredShelters.length}
+        locationFilter={locationFilter}
+        setLocationFilter={setLocationFilter}
       />
 
       {isLoading ? (
@@ -111,6 +122,7 @@ export default function SheltersContent() {
           userLocation={userLocation}
           setUserLocation={setUserLocation}
           onClearFilters={handleClearFilters}
+          forceNearest={locationFilter !== null}
         />
       )}
 

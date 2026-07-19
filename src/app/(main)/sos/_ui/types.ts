@@ -8,9 +8,8 @@ export const sosFormSchema = z
     helpTypes: z.array(z.string()),
     phone: z.string(),
     description: z.string().max(500),
-    photoFile: z.any().nullable(),
-    photoPreview: z.string().nullable(),
-    photoUrl: z.string().nullable(),
+    photoPreviews: z.array(z.string()),
+    photoUrls: z.array(z.string()),
   })
   .superRefine((data, ctx) => {
     if (data.districtId === null) {

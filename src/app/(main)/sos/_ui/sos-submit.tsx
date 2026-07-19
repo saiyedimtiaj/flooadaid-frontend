@@ -2,7 +2,6 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  XCircle,
   Loader2,
   Lock,
   CheckCircle,
@@ -18,12 +17,10 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 interface SOSSubmitProps {
-  isValid: boolean;
   isSubmitting: boolean;
   isSubmitted: boolean;
   onSubmit: () => void;
   sosId: string | null;
-  missingRequirements?: string[];
   peopleCount?: string | null;
   helpTypes?: string[];
   address?: string;
@@ -45,12 +42,10 @@ const NEXT_STEPS = [
 ];
 
 export default function SOSSubmit({
-  isValid,
   isSubmitting,
   isSubmitted,
   onSubmit,
   sosId,
-  missingRequirements = [],
   peopleCount,
   helpTypes = [],
   address,
@@ -264,40 +259,13 @@ export default function SOSSubmit({
 
   return (
     <div className="w-full">
-      <AnimatePresence>
-        {!isValid && missingRequirements.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="flex flex-col gap-1 mt-4 mb-3 overflow-hidden"
-          >
-            {missingRequirements.map((req) => (
-              <motion.div
-                key={req}
-                initial={{ opacity: 0, x: -4 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 4 }}
-                transition={{ duration: 0.2 }}
-                className="flex items-center gap-1.5"
-              >
-                <XCircle className="size-3.5 text-destructive shrink-0" />
-                <span className="text-xs text-destructive font-medium">
-                  {req}
-                </span>
-              </motion.div>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       <div className="mt-4">
         <motion.button
           onClick={onSubmit}
-          disabled={!isValid || isSubmitting}
-          whileTap={isValid && !isSubmitting ? { scale: 0.97 } : undefined}
+          disabled={isSubmitting}
+          whileTap={!isSubmitting ? { scale: 0.97 } : undefined}
           animate={
-            isValid && !isSubmitting
+            !isSubmitting
               ? {
                   boxShadow: [
                     "0 0 0 0px rgba(239, 68, 68, 0)",
@@ -312,10 +280,10 @@ export default function SOSSubmit({
             duration: 2.5,
             ease: "easeInOut",
           }}
-          className={`w-full h-14 rounded-xl text-lg font-bold flex items-center justify-center gap-2 select-none transition-colors duration-150 ${
-            isValid && !isSubmitting
-              ? "bg-destructive text-white cursor-pointer"
-              : "bg-destructive/40 text-white/60 cursor-not-allowed"
+          className={`w-full h-16 rounded-2xl text-xl font-bold flex items-center justify-center gap-2 select-none transition-colors duration-150 ${
+            isSubmitting
+              ? "bg-destructive/60 text-white/70 cursor-not-allowed"
+              : "bg-destructive text-white cursor-pointer hover:bg-destructive/95"
           }`}
         >
           <AnimatePresence mode="wait" initial={false}>
@@ -328,8 +296,8 @@ export default function SOSSubmit({
                 transition={{ duration: 0.15 }}
                 className="flex items-center gap-2"
               >
-                <Loader2 className="size-5 animate-spin" />
-                Sending SOS...
+                <Loader2 className="size-6 animate-spin" />
+                Sending your SOS...
               </motion.span>
             ) : (
               <motion.span
@@ -340,7 +308,7 @@ export default function SOSSubmit({
                 transition={{ duration: 0.15 }}
                 className="flex items-center gap-2"
               >
-                🆘 Send Emergency SOS
+                🆘 Send SOS for Help
               </motion.span>
             )}
           </AnimatePresence>
@@ -350,7 +318,7 @@ export default function SOSSubmit({
       <div className="flex items-center justify-center gap-1.5 mt-3 select-none">
         <Lock className="size-3 text-muted-foreground" />
         <span className="text-[11px] text-muted-foreground font-medium">
-          Your information is secure and shared only with rescue teams
+          Your information is safe and shared only with rescue teams
         </span>
       </div>
     </div>

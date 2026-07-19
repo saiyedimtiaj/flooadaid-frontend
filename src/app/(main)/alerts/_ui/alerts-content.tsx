@@ -14,6 +14,19 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAlerts } from "@/lib/hooks/use-alerts";
 import { ALERT_SEVERITIES } from "@/lib/alert-severity-styles";
 import type { Alert, AlertSeverity } from "@/lib/types/api";
+import type { SelectedLocation } from "@/components/map/location-search-modal";
+
+function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 
 const AlertsMap = dynamic(() => import("./alerts-map"), {
   ssr: false,
@@ -21,7 +34,7 @@ const AlertsMap = dynamic(() => import("./alerts-map"), {
     <div className="w-full h-87.5 md:h-225 flex flex-col items-center justify-center bg-muted/20 border border-border rounded-xl">
       <div className="h-8 w-8 rounded-full border-4 border-primary border-t-transparent animate-spin" />
       <span className="text-xs text-muted-foreground font-bold uppercase tracking-widest mt-4">
-        Initializing Map Grid...
+        Loading map...
       </span>
     </div>
   ),
@@ -40,6 +53,7 @@ export function AlertsContent() {
   const [selectedDivisionId, setSelectedDivisionId] = useState<number | null>(null);
   const [selectedDistrictId, setSelectedDistrictId] = useState<number | null>(null);
   const [selectedSeverities, setSelectedSeverities] = useState<AlertSeverity[]>([]);
+  const [locationFilter, setLocationFilter] = useState<SelectedLocation | null>(null);
 
   const [activeView, setActiveView] = useState<"map" | "list">("map");
   const [selectedAlert, setSelectedAlert] = useState<Alert | null>(null);
@@ -68,23 +82,43 @@ export function AlertsContent() {
       setSelectedDivisionId(null);
       setSelectedDistrictId(null);
       setSelectedSeverities([]);
+      setLocationFilter(null);
     });
   };
 
   const isFilterActive =
-    searchQuery !== "" || selectedDivisionId !== null || selectedDistrictId !== null || selectedSeverities.length > 0;
+    searchQuery !== "" ||
+    selectedDivisionId !== null ||
+    selectedDistrictId !== null ||
+    selectedSeverities.length > 0 ||
+    locationFilter !== null;
 
   const filteredAlerts = useMemo(() => {
-    if (searchQuery === "") return alerts;
-    const q = searchQuery.toLowerCase();
-    return alerts.filter(
-      (alert) =>
-        alert.title.toLowerCase().includes(q) ||
-        (alert.titleBn ?? "").includes(searchQuery) ||
-        alert.district.nameEn.toLowerCase().includes(q) ||
-        alert.district.nameBn.includes(searchQuery),
-    );
-  }, [alerts, searchQuery]);
+    let list = alerts;
+
+    if (searchQuery !== "") {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(
+        (alert) =>
+          alert.title.toLowerCase().includes(q) ||
+          (alert.titleBn ?? "").includes(searchQuery) ||
+          alert.district.nameEn.toLowerCase().includes(q) ||
+          alert.district.nameBn.includes(searchQuery),
+      );
+    }
+
+    // Location filter: keep alerts whose district is within ~80km of the point.
+    if (locationFilter) {
+      list = list.filter((a) => {
+        if (a.district.latitude == null || a.district.longitude == null) return false;
+        return (
+          haversineKm(locationFilter.lat, locationFilter.lng, a.district.latitude, a.district.longitude) <= 80
+        );
+      });
+    }
+
+    return list;
+  }, [alerts, searchQuery, locationFilter]);
 
   const countsBySeverity = useMemo(() => {
     const counts: Record<AlertSeverity, number> = { CRITICAL: 0, DANGER: 0, WARNING: 0, WATCH: 0, NORMAL: 0 };
@@ -95,12 +129,26 @@ export function AlertsContent() {
   }, [filteredAlerts]);
 
   const sortedAlerts = useMemo(() => {
+    // When a location is chosen, sort by nearest district first.
+    if (locationFilter) {
+      return [...filteredAlerts].sort((a, b) => {
+        const da =
+          a.district.latitude != null && a.district.longitude != null
+            ? haversineKm(locationFilter.lat, locationFilter.lng, a.district.latitude, a.district.longitude)
+            : Infinity;
+        const db =
+          b.district.latitude != null && b.district.longitude != null
+            ? haversineKm(locationFilter.lat, locationFilter.lng, b.district.latitude, b.district.longitude)
+            : Infinity;
+        return da - db;
+      });
+    }
     return [...filteredAlerts].sort((a, b) => {
       const weightDiff = SEVERITY_WEIGHT[b.severity] - SEVERITY_WEIGHT[a.severity];
       if (weightDiff !== 0) return weightDiff;
       return a.id.localeCompare(b.id);
     });
-  }, [filteredAlerts]);
+  }, [filteredAlerts, locationFilter]);
 
   const severeCount = alerts.filter((a) => a.severity === "CRITICAL" || a.severity === "DANGER").length;
 
@@ -174,6 +222,8 @@ export function AlertsContent() {
         toggleSeverity={handleToggleSeverity}
         clearFilters={handleClearFilters}
         isFilterActive={isFilterActive}
+        locationFilter={locationFilter}
+        setLocationFilter={setLocationFilter}
       />
 
       <div className="flex flex-wrap items-center gap-2 py-1 select-none">
@@ -252,8 +302,7 @@ export function AlertsContent() {
                   No flood alerts found
                 </h3>
                 <p className="text-xs text-muted-foreground/80 leading-relaxed max-w-xs mt-1">
-                  Try broadening your division parameters, district selections,
-                  or adjusting your query terms.
+                  Try clearing the filters or searching a different district.
                 </p>
                 <Button
                   size="sm"

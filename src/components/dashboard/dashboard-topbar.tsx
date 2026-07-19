@@ -63,16 +63,20 @@ export function DashboardTopbar({ user }: { user: AuthUser }) {
           </Avatar>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
-          <DropdownMenuLabel>
-            <div className="flex flex-col">
-              <span className="font-semibold text-foreground">{user.name}</span>
-              <span className="text-xs font-normal text-muted-foreground">
-                {ROLE_LABEL[user.role]}
-              </span>
-            </div>
-          </DropdownMenuLabel>
+          <DropdownMenuGroup>
+            <DropdownMenuLabel>
+              <div className="flex flex-col">
+                <span className="font-semibold text-foreground">{user.name}</span>
+                <span className="text-xs font-normal text-muted-foreground">
+                  {ROLE_LABEL[user.role]}
+                </span>
+              </div>
+            </DropdownMenuLabel>
+          </DropdownMenuGroup>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => router.push(`${ROLE_HOME[user.role]}/settings`)}>
+          <DropdownMenuItem
+            onClick={() => router.push(`${ROLE_HOME[user.role] ?? "/"}/settings`)}
+          >
             <UserIcon className="h-4 w-4" />
             Account Settings
           </DropdownMenuItem>

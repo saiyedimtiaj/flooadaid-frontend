@@ -5,6 +5,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
+import { NotificationsRealtime } from "@/components/providers/notifications-realtime"
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -24,9 +25,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={cn("h-full", "antialiased", plusJakartaSans.className)}>
-      <body className="min-h-full flex flex-col font-sans">
+      <body className="min-h-full flex flex-col font-sans" suppressHydrationWarning>
         <Toaster />
         <QueryProvider>
+          <NotificationsRealtime />
           <TooltipProvider delay={200}>{children}</TooltipProvider>
         </QueryProvider>
       </body>

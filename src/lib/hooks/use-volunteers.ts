@@ -20,6 +20,33 @@ export function useVolunteers() {
   });
 }
 
+export interface NearbyVolunteer {
+  id: string;
+  name: string;
+  phone: string | null;
+  skills: string[];
+  district: string;
+  distanceKm: number;
+}
+
+/** Nearby available volunteers (admin/volunteer only — includes contact info). */
+export function useNearbyVolunteers(
+  location: { lat: number; lng: number } | null,
+  options: { radiusKm?: number; limit?: number } = {},
+) {
+  const radiusKm = options.radiusKm ?? 50;
+  const limit = options.limit ?? 8;
+
+  return useQuery({
+    queryKey: ["volunteers-nearby", location, radiusKm, limit],
+    queryFn: () =>
+      api.get<NearbyVolunteer[]>(
+        `/volunteers/nearby?lat=${location!.lat}&lng=${location!.lng}&radiusKm=${radiusKm}&limit=${limit}`,
+      ),
+    enabled: location !== null,
+  });
+}
+
 export function useMyVolunteerProfile(enabled = true) {
   return useQuery({
     queryKey: ["volunteers", "me"],

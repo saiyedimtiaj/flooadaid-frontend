@@ -1,7 +1,8 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Search, RotateCcw, SlidersHorizontal } from "lucide-react";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Search, RotateCcw, SlidersHorizontal, MapPinned, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,10 @@ import {
 import { useDistricts, useDivisions } from "@/lib/hooks/use-locations";
 import { ALERT_SEVERITIES } from "@/lib/alert-severity-styles";
 import type { AlertSeverity } from "@/lib/types/api";
+import {
+  LocationSearchModal,
+  type SelectedLocation,
+} from "@/components/map/location-search-modal";
 
 interface AlertFiltersProps {
   searchQuery: string;
@@ -27,6 +32,8 @@ interface AlertFiltersProps {
   toggleSeverity: (severity: AlertSeverity) => void;
   clearFilters: () => void;
   isFilterActive: boolean;
+  locationFilter: SelectedLocation | null;
+  setLocationFilter: (loc: SelectedLocation | null) => void;
 }
 
 const severityPillStyles: Record<AlertSeverity, string> = {
@@ -53,32 +60,78 @@ export function AlertFilters({
   toggleSeverity,
   clearFilters,
   isFilterActive,
+  locationFilter,
+  setLocationFilter,
 }: AlertFiltersProps) {
   const { data: divisions } = useDivisions();
   const { data: districts } = useDistricts(selectedDivisionId ?? undefined);
+  const [locationModalOpen, setLocationModalOpen] = useState(false);
 
   return (
-    <Card>
-      <div className="flex flex-col gap-4">
-        <div className="flex items-center gap-2">
-          <SlidersHorizontal className="size-4 text-primary" />
-          <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-            Filter Alerts
-          </span>
+    <Card className="rounded-3xl border border-border bg-card p-5 md:p-6 shadow-sm">
+      <div className="flex flex-col gap-5">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2.5">
+            <div className="flex items-center justify-center size-8 rounded-xl bg-primary/10 text-primary">
+              <SlidersHorizontal className="size-4" />
+            </div>
+            <span className="text-sm font-bold text-foreground">
+              Find Alerts Near You
+            </span>
+          </div>
+          <Button
+            type="button"
+            onClick={() => setLocationModalOpen(true)}
+            className="h-9 rounded-xl gap-2 font-semibold shadow-sm"
+          >
+            <MapPinned className="size-4" />
+            Find on Map
+          </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
-          <div className="relative md:col-span-6">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by district or title..."
-              className="pl-10 h-11 rounded-xl w-full focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary"
-            />
+        {/* Active location chip */}
+        <AnimatePresence>
+          {locationFilter && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden"
+            >
+              <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 pl-3 pr-1.5 py-1.5">
+                <MapPinned className="size-3.5 text-primary shrink-0" />
+                <span className="text-xs font-semibold text-primary truncate max-w-56">
+                  Near: {locationFilter.label?.split(",")[0] ?? "chosen location"}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setLocationFilter(null)}
+                  className="flex items-center justify-center size-5 rounded-full hover:bg-primary/20 transition-colors"
+                  aria-label="Clear location"
+                >
+                  <X className="size-3 text-primary" />
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+          <div className="md:col-span-6 flex flex-col gap-1.5">
+            <label className="text-xs font-bold text-muted-foreground">Search</label>
+            <div className="relative">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Type a district or alert name..."
+                className="pl-10 h-11 rounded-xl w-full focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary"
+              />
+            </div>
           </div>
 
-          <div className="md:col-span-3">
+          <div className="md:col-span-3 flex flex-col gap-1.5">
+            <label className="text-xs font-bold text-muted-foreground">Division</label>
             <Select
               value={selectedDivisionId ? String(selectedDivisionId) : "all"}
               onValueChange={(val) => {
@@ -87,7 +140,14 @@ export function AlertFilters({
               }}
             >
               <SelectTrigger className="w-full data-[size=default]:h-11 rounded-xl">
-                <SelectValue placeholder="All Divisions" />
+                <SelectValue placeholder="All Divisions">
+                  {(val: string) =>
+                    val === "all" || !val
+                      ? "All Divisions"
+                      : (divisions?.find((d) => String(d.id) === val)?.nameEn ??
+                        "All Divisions")
+                  }
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Divisions</SelectItem>
@@ -100,14 +160,22 @@ export function AlertFilters({
             </Select>
           </div>
 
-          <div className="md:col-span-3">
+          <div className="md:col-span-3 flex flex-col gap-1.5">
+            <label className="text-xs font-bold text-muted-foreground">District</label>
             <Select
               value={selectedDistrictId ? String(selectedDistrictId) : "all"}
               onValueChange={(val) => setSelectedDistrictId(val === "all" ? null : Number(val))}
               disabled={!selectedDivisionId}
             >
               <SelectTrigger className="w-full data-[size=default]:h-11 rounded-xl">
-                <SelectValue placeholder="All Districts" />
+                <SelectValue placeholder="All Districts">
+                  {(val: string) =>
+                    val === "all" || !val
+                      ? "All Districts"
+                      : (districts?.find((d) => String(d.id) === val)?.nameEn ??
+                        "All Districts")
+                  }
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Districts</SelectItem>
@@ -123,6 +191,9 @@ export function AlertFilters({
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 border-t border-border/60">
           <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-bold text-muted-foreground mr-1 w-full sm:w-auto">
+              Severity:
+            </span>
             {ALERT_SEVERITIES.map((severity) => {
               const isActive = selectedSeverities.includes(severity);
               return (
@@ -152,6 +223,14 @@ export function AlertFilters({
           )}
         </div>
       </div>
+
+      <LocationSearchModal
+        open={locationModalOpen}
+        onOpenChange={setLocationModalOpen}
+        onSelect={setLocationFilter}
+        title="Find alerts near a location"
+        description="Search a place, tap the map, or use your current location to see the nearest flood alerts."
+      />
     </Card>
   );
 }

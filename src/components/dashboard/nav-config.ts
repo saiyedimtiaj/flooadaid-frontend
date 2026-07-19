@@ -11,6 +11,8 @@ import {
   ClipboardList,
   UserRound,
   Bell,
+  PhoneCall,
+  Inbox,
 } from "lucide-react";
 import type { Role } from "@/lib/types/auth";
 
@@ -37,9 +39,11 @@ const ADMIN_NAV: NavItem[] = [
   { label: "Alerts", href: "/admin/alerts", icon: Radar },
   { label: "Shelters", href: "/admin/shelters", icon: MapPin },
   { label: "SOS Requests", href: "/admin/sos", icon: Siren },
+  { label: "Manual SOS", href: "/admin/manual-sos", icon: PhoneCall },
   { label: "Relief", href: "/admin/relief", icon: Package },
   { label: "Volunteers", href: "/admin/volunteers", icon: Users },
   { label: "Users", href: "/admin/users", icon: UserRound },
+  { label: "Feedback", href: "/admin/feedback", icon: Inbox },
   { label: "Reports", href: "/admin/reports", icon: BarChart3 },
   { label: "Settings", href: "/admin/settings", icon: Settings },
 ];
@@ -47,6 +51,8 @@ const ADMIN_NAV: NavItem[] = [
 const VOLUNTEER_NAV: NavItem[] = [
   { label: "Overview", href: "/volunteer", icon: LayoutDashboard },
   { label: "My Tasks", href: "/volunteer/tasks", icon: ClipboardList },
+  { label: "Manual SOS", href: "/volunteer/manual-sos", icon: PhoneCall },
+  { label: "My Relief", href: "/volunteer/relief", icon: Package },
   { label: "Profile", href: "/volunteer/profile", icon: UserRound },
   { label: "Settings", href: "/volunteer/settings", icon: Settings },
 ];

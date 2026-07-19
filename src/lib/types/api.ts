@@ -89,6 +89,8 @@ export interface SosRequest {
   helpType: HelpType[];
   description: string | null;
   photoUrl: string | null;
+  /** Multiple photos — populated once the backend stores an array (Phase 2). */
+  photoUrls?: string[];
   status: SosStatus;
   priority: SosPriority;
   assignedToId: string | null;
