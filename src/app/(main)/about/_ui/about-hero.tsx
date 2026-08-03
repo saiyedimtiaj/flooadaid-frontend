@@ -1,8 +1,9 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { motion } from "framer-motion";
-import { Heart, ChevronDown } from "lucide-react";
+import { Heart, ChevronDown, ChevronRight } from "lucide-react";
 import { useState } from "react";
 
 export default function AboutHero() {
@@ -16,10 +17,10 @@ export default function AboutHero() {
         <>
           <div className="absolute inset-0 z-0">
             <Image
-              src="/images/about/hero-flood.webp"
-              alt="Flood affected area in Bangladesh"
+              src="/images/about/hero-flood.jpg"
+              alt="A boy navigates floodwater on a makeshift raft during Bangladesh's monsoon floods"
               fill
-              priority
+              preload
               className="object-cover"
               onError={() => setImageError(true)}
             />
@@ -46,7 +47,20 @@ export default function AboutHero() {
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.2 }}
+          transition={{ duration: 0.4 }}
+          className="flex items-center gap-1 text-xs font-medium text-white/60 select-none mb-6"
+        >
+          <Link href="/" className="hover:text-white/90 transition-colors">
+            Home
+          </Link>
+          <ChevronRight className="h-3 w-3" />
+          <span className="text-white/90">About</span>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.15 }}
           className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/10 px-4 py-1.5 backdrop-blur-sm"
         >
           <Heart className="size-3.5 text-destructive fill-destructive" />
@@ -58,7 +72,7 @@ export default function AboutHero() {
         <motion.h1
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.35 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
           className="mt-6 text-balance text-3xl font-bold leading-tight text-white md:text-4xl lg:text-5xl"
         >
           Technology That Saves Lives During Floods
@@ -67,7 +81,7 @@ export default function AboutHero() {
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.55 }}
+          transition={{ duration: 0.5, delay: 0.5 }}
           className="mt-4 max-w-xl text-base leading-relaxed text-white/75 md:text-lg"
         >
           FloodAid BD is a real-time flood information and emergency relief
@@ -79,7 +93,7 @@ export default function AboutHero() {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.4, delay: 0.7 }}
+            transition={{ duration: 0.4, delay: 0.65 }}
             className="w-40 rounded-xl border border-white/10 bg-white/10 px-6 py-4 backdrop-blur-md"
           >
             <span className="block text-2xl font-bold text-white">10L+</span>
@@ -91,7 +105,7 @@ export default function AboutHero() {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.4, delay: 0.8 }}
+            transition={{ duration: 0.4, delay: 0.75 }}
             className="w-40 rounded-xl border border-white/10 bg-white/10 px-6 py-4 backdrop-blur-md"
           >
             <span className="block text-2xl font-bold text-white">700+</span>
@@ -101,6 +115,12 @@ export default function AboutHero() {
           </motion.div>
         </div>
       </div>
+
+      {!imageError && (
+        <span className="absolute bottom-3 right-4 z-30 hidden text-[10px] text-white/35 sm:block">
+          Photo: Md shameem ul islam / Wikimedia Commons, CC BY 4.0
+        </span>
+      )}
 
       <motion.div
         initial={{ opacity: 0 }}

@@ -11,17 +11,17 @@ import {
 import { ArrowRight, MapPin, Droplets, Clock, Radar } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { useTheme } from "next-themes";
 import "leaflet/dist/leaflet.css";
+import { ALERT_SEVERITIES, ALERT_SEVERITY_STYLES } from "@/lib/alert-severity-styles";
+import type { AlertSeverity } from "@/lib/types/api";
 
 interface DistrictMarker {
   id: string;
   name: string;
   lat: number;
   lng: number;
-  severity: "critical" | "danger" | "warning" | "watch";
-  color: string;
-  radius: number;
-  opacity: number;
+  severity: AlertSeverity;
   waterLevel: string;
   affected: string;
 }
@@ -32,10 +32,7 @@ const affectedDistricts: DistrictMarker[] = [
     name: "Chattogram",
     lat: 22.3569,
     lng: 91.7832,
-    severity: "critical",
-    color: "#7C2D12",
-    radius: 22,
-    opacity: 0.85,
+    severity: "CRITICAL",
     waterLevel: "250cm above danger level",
     affected: "~450,000 people",
   },
@@ -44,10 +41,7 @@ const affectedDistricts: DistrictMarker[] = [
     name: "Cox's Bazar",
     lat: 21.4272,
     lng: 92.0058,
-    severity: "danger",
-    color: "#EF4444",
-    radius: 18,
-    opacity: 0.75,
+    severity: "DANGER",
     waterLevel: "180cm above danger level",
     affected: "~320,000 people",
   },
@@ -56,10 +50,7 @@ const affectedDistricts: DistrictMarker[] = [
     name: "Bandarban",
     lat: 22.1953,
     lng: 92.2184,
-    severity: "danger",
-    color: "#EF4444",
-    radius: 16,
-    opacity: 0.7,
+    severity: "DANGER",
     waterLevel: "150cm above danger level",
     affected: "~120,000 people",
   },
@@ -68,10 +59,7 @@ const affectedDistricts: DistrictMarker[] = [
     name: "Rangamati",
     lat: 22.7324,
     lng: 92.2985,
-    severity: "warning",
-    color: "#F97316",
-    radius: 15,
-    opacity: 0.65,
+    severity: "WARNING",
     waterLevel: "85cm above danger level",
     affected: "~95,000 people",
   },
@@ -80,10 +68,7 @@ const affectedDistricts: DistrictMarker[] = [
     name: "Khagrachhari",
     lat: 23.1193,
     lng: 91.9847,
-    severity: "warning",
-    color: "#F97316",
-    radius: 14,
-    opacity: 0.6,
+    severity: "WARNING",
     waterLevel: "60cm above danger level",
     affected: "~70,000 people",
   },
@@ -92,10 +77,7 @@ const affectedDistricts: DistrictMarker[] = [
     name: "Moulvibazar",
     lat: 24.4829,
     lng: 91.7774,
-    severity: "watch",
-    color: "#EAB308",
-    radius: 13,
-    opacity: 0.55,
+    severity: "WATCH",
     waterLevel: "Near danger level",
     affected: "~150,000 people",
   },
@@ -104,22 +86,20 @@ const affectedDistricts: DistrictMarker[] = [
     name: "Habiganj",
     lat: 24.374,
     lng: 91.4164,
-    severity: "watch",
-    color: "#EAB308",
-    radius: 12,
-    opacity: 0.5,
+    severity: "WATCH",
     waterLevel: "Rising rapidly",
     affected: "~110,000 people",
   },
 ];
 
-const legendItems = [
-  { label: "Critical", className: "bg-[#7C2D12] border-[#521E0F]" },
-  { label: "Danger", className: "bg-red-500 border-red-600" },
-  { label: "Warning", className: "bg-orange-500 border-orange-600" },
-  { label: "Watch", className: "bg-yellow-500 border-yellow-600" },
-  { label: "Normal", className: "bg-emerald-500 border-emerald-600" },
-];
+const SEVERITY_BADGE_CLASS: Record<AlertSeverity, string> = {
+  NORMAL: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20",
+  WATCH: "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20",
+  WARNING: "bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/20",
+  DANGER: "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20",
+  CRITICAL:
+    "bg-[#7c2d12]/15 text-[#7c2d12] dark:bg-[#dc2626]/15 dark:text-[#f87171] border-[#7c2d12]/25 dark:border-[#dc2626]/25",
+};
 
 function MapScrollControl() {
   const [showTooltip, setShowTooltip] = useState(false);
@@ -155,6 +135,9 @@ function MapScrollControl() {
 }
 
 export default function HomeFloodMap() {
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
+
   return (
     <section className="relative my-16 md:my-20 w-full bg-background">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col gap-6">
@@ -208,46 +191,33 @@ export default function HomeFloodMap() {
               <MapScrollControl />
 
               {affectedDistricts.map((district) => {
-                const isPulsing =
-                  district.severity === "critical" ||
-                  district.severity === "danger";
-                const classNames = isPulsing ? "map-pulse-accent" : "";
+                const style = ALERT_SEVERITY_STYLES[district.severity];
+                const color = isDark ? style.darkColor : style.color;
 
                 return (
                   <CircleMarker
                     key={district.id}
                     center={[district.lat, district.lng]}
-                    radius={district.radius}
+                    radius={style.radius}
                     pathOptions={{
-                      fillColor: district.color,
-                      color: district.color,
-                      weight: isPulsing ? 2 : 1,
-                      opacity: district.opacity,
-                      fillOpacity: district.opacity - 0.15,
+                      fillColor: color,
+                      color: color,
+                      weight: 2,
+                      opacity: 0.9,
+                      fillOpacity: style.opacity,
                     }}
-                    className={classNames}
+                    className="alert-marker-ring"
                   >
-                    <Popup minWidth={200} className="custom-popup">
+                    <Popup minWidth={200}>
                       <div className="flex flex-col gap-2 font-sans">
                         <div className="flex items-center justify-between gap-3">
                           <span className="font-bold text-sm text-slate-950 dark:text-white leading-none">
                             {district.name}
                           </span>
                           <span
-                            className={`
-                              px-1.5 py-0.5 text-[9px] font-extrabold uppercase rounded-sm leading-none border
-                              ${
-                                district.severity === "critical"
-                                  ? "bg-red-950 text-red-200 border-red-800"
-                                  : district.severity === "danger"
-                                    ? "bg-red-500/10 text-red-600 border-red-200"
-                                    : district.severity === "warning"
-                                      ? "bg-orange-500/10 text-orange-600 border-orange-200"
-                                      : "bg-yellow-500/10 text-yellow-600 border-yellow-200"
-                              }
-                            `}
+                            className={`px-1.5 py-0.5 text-[9px] font-extrabold uppercase rounded-sm leading-none border ${SEVERITY_BADGE_CLASS[district.severity]}`}
                           >
-                            {district.severity}
+                            {style.label}
                           </span>
                         </div>
 
@@ -284,16 +254,23 @@ export default function HomeFloodMap() {
                 Severity
               </span>
               <div className="flex flex-col gap-1.5">
-                {legendItems.map((item) => (
-                  <div key={item.label} className="flex items-center gap-2">
-                    <span
-                      className={`h-2.5 w-2.5 rounded-full border shrink-0 ${item.className}`}
-                    />
-                    <span className="text-xs text-foreground font-medium leading-none">
-                      {item.label}
-                    </span>
-                  </div>
-                ))}
+                {ALERT_SEVERITIES.slice()
+                  .reverse()
+                  .map((severity) => {
+                    const style = ALERT_SEVERITY_STYLES[severity];
+                    const color = isDark ? style.darkColor : style.color;
+                    return (
+                      <div key={severity} className="flex items-center gap-2">
+                        <span
+                          className="h-2.5 w-2.5 rounded-full ring-2 ring-background shrink-0"
+                          style={{ backgroundColor: color }}
+                        />
+                        <span className="text-xs text-foreground font-medium leading-none">
+                          {style.label}
+                        </span>
+                      </div>
+                    );
+                  })}
               </div>
             </div>
           </div>
@@ -311,7 +288,7 @@ export default function HomeFloodMap() {
             <span>7 districts affected</span>
           </div>
           <div className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-destructive">
-            <Droplets className="h-4 w-4 text-destructive shrink-0 animate-pulse" />
+            <Droplets className="h-4 w-4 text-destructive shrink-0" />
             <span>Water levels rising</span>
           </div>
           <div className="inline-flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground">

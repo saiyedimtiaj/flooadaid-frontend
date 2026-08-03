@@ -1,39 +1,39 @@
 "use client";
 
 import Image from "next/image";
-import { motion } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 import { Heart } from "lucide-react";
 import { useState } from "react";
 
+const containerVariants: Variants = {
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+};
+
+const textVariants: Variants = {
+  hidden: { opacity: 0, x: -16 },
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] },
+  },
+};
+
+const pillVariants: Variants = {
+  hidden: { opacity: 0, y: 8 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.3 },
+  },
+};
+
 export default function AboutMission() {
   const [imageError, setImageError] = useState(false);
-
-  const containerVariants = {
-    hidden: {},
-    visible: {
-      transition: {
-        staggerChildren: 0.1,
-      },
-    },
-  };
-
-  const textVariants = {
-    hidden: { opacity: 0, x: -16 },
-    visible: {
-      opacity: 1,
-      x: 0,
-      transition: { duration: 0.5 },
-    },
-  };
-
-  const pillVariants = {
-    hidden: { opacity: 0, y: 8 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.3 },
-    },
-  };
 
   return (
     <section className="py-20 md:py-28 bg-background">
@@ -112,20 +112,25 @@ export default function AboutMission() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true, margin: "-100px" }}
               transition={{ duration: 0.5, delay: 0.15 }}
-              className="relative aspect-[4/3] rounded-2xl overflow-hidden"
+              className="relative aspect-4/3 rounded-2xl overflow-hidden ring-1 ring-border shadow-lg"
             >
               {imageError ? (
                 <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-primary/10 flex items-center justify-center">
                   <Heart className="size-16 text-primary/20" />
                 </div>
               ) : (
-                <Image
-                  src="/images/about/mission.webp"
-                  alt="Bangladesh flood affected family hope"
-                  fill
-                  className="object-cover"
-                  onError={() => setImageError(true)}
-                />
+                <>
+                  <Image
+                    src="/images/about/mission.jpg"
+                    alt="A boy in floodwater holds his schoolbook above the water to keep it dry"
+                    fill
+                    className="object-cover"
+                    onError={() => setImageError(true)}
+                  />
+                  <span className="absolute bottom-2 right-2.5 text-[9px] text-white/70 drop-shadow-sm">
+                    Md shameem ul islam / CC BY 4.0
+                  </span>
+                </>
               )}
             </motion.div>
 

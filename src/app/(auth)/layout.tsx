@@ -117,7 +117,7 @@ export default function AuthLayout({
                 ))}
               </div>
               <span
-                className="absolute -top-1 h-4 w-4 -translate-x-1/2 rounded-full ring-2 ring-white map-pulse-accent"
+                className="absolute -top-1 h-4 w-4 -translate-x-1/2 rounded-full ring-2 ring-white gauge-pulse-accent"
                 style={{
                   left: `${((CURRENT_STOP_INDEX + 0.5) / GAUGE_STOPS.length) * 100}%`,
                   background: GAUGE_STOPS[CURRENT_STOP_INDEX].color,

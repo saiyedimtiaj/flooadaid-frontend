@@ -10,10 +10,19 @@ import {
 } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Badge } from "@/components/ui/badge";
-import { ALERT_SEVERITY_STYLES, BANGLADESH_CENTER } from "@/lib/alert-severity-styles";
+import { useTheme } from "next-themes";
+import { AlertTriangle } from "lucide-react";
+import { ALERT_SEVERITY_STYLES, ALERT_SEVERITIES, BANGLADESH_CENTER } from "@/lib/alert-severity-styles";
 import { timeAgo } from "@/lib/format-time-ago";
-import type { Alert } from "@/lib/types/api";
+import type { Alert, AlertSeverity } from "@/lib/types/api";
+
+const SEVERITY_BADGE_CLASS: Record<AlertSeverity, string> = {
+  NORMAL: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+  WATCH: "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400",
+  WARNING: "bg-orange-500/10 text-orange-700 dark:text-orange-400",
+  DANGER: "bg-red-500/10 text-red-700 dark:text-red-400",
+  CRITICAL: "bg-[#7c2d12]/15 text-[#7c2d12] dark:bg-[#dc2626]/15 dark:text-[#f87171]",
+};
 
 function positionOf(alert: Alert): [number, number] {
   if (alert.district.latitude !== null && alert.district.longitude !== null) {
@@ -52,6 +61,9 @@ export default function AlertsMap({ alerts, onSelectAlert }: AlertsMapProps) {
     return () => cancelAnimationFrame(id);
   }, []);
 
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
+
   if (!mounted) {
     return (
       <div className="w-full h-87.5 md:h-180 rounded-xl border border-border bg-muted/20 flex items-center justify-center">
@@ -63,32 +75,37 @@ export default function AlertsMap({ alerts, onSelectAlert }: AlertsMapProps) {
   }
 
   return (
-    <div className="relative w-full h-87.5 md:h-180 rounded-xl overflow-hidden border border-border shadow-sm z-10">
+    <div className="relative w-full h-87.5 md:h-180 rounded-2xl overflow-hidden border border-border shadow-sm z-10">
       <MapContainer center={BANGLADESH_CENTER} zoom={7} className="w-full h-full">
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+        <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" />
 
         {alerts.map((alert) => {
           const style = ALERT_SEVERITY_STYLES[alert.severity];
+          const color = isDark ? style.darkColor : style.color;
           return (
             <CircleMarker
               key={alert.id}
               center={positionOf(alert)}
               radius={style.radius}
-              fillColor={style.color}
-              color={style.color}
-              weight={2}
-              opacity={style.opacity}
-              fillOpacity={style.opacity - 0.1}
+              pathOptions={{
+                fillColor: color,
+                color: color,
+                weight: 2,
+                opacity: 0.9,
+                fillOpacity: style.opacity,
+              }}
+              className="alert-marker-ring"
+              eventHandlers={{ click: () => onSelectAlert(alert) }}
             >
-              <Popup>
-                <div className="p-1 space-y-2 min-w-200px">
+              <Popup minWidth={220}>
+                <div className="p-1 space-y-2 min-w-50">
                   <div className="flex items-center justify-between gap-2">
-                    <Badge className="text-[10px] capitalize font-bold shrink-0" variant="info">
+                    <span
+                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide ${SEVERITY_BADGE_CLASS[alert.severity]}`}
+                    >
+                      <AlertTriangle className="h-2.5 w-2.5" />
                       {style.label}
-                    </Badge>
+                    </span>
                     <span className="text-[10px] text-muted-foreground shrink-0">
                       {timeAgo(alert.createdAt)}
                     </span>
@@ -118,17 +135,24 @@ export default function AlertsMap({ alerts, onSelectAlert }: AlertsMapProps) {
         <MapController alerts={alerts} />
       </MapContainer>
 
-      <div className="absolute bottom-4 right-4 bg-background/95 backdrop-blur-md p-3 rounded-lg border border-border shadow-lg z-400 text-left select-none hidden sm:block">
-        <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
+      <div className="absolute bottom-4 right-4 bg-background/95 backdrop-blur-md p-3.5 rounded-xl border border-border shadow-lg z-400 text-left select-none hidden sm:block">
+        <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2.5">
           Severity Scale
         </h4>
-        <div className="space-y-1.5">
-          {Object.values(ALERT_SEVERITY_STYLES).map((value) => (
-            <div key={value.label} className="flex items-center gap-2">
-              <span className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: value.color }} />
-              <span className="text-[11px] font-medium text-foreground">{value.label}</span>
-            </div>
-          ))}
+        <div className="space-y-2">
+          {ALERT_SEVERITIES.map((severity) => {
+            const value = ALERT_SEVERITY_STYLES[severity];
+            const color = isDark ? value.darkColor : value.color;
+            return (
+              <div key={severity} className="flex items-center gap-2">
+                <span
+                  className="h-2.5 w-2.5 rounded-full shrink-0 ring-2 ring-background"
+                  style={{ backgroundColor: color }}
+                />
+                <span className="text-[11px] font-medium text-foreground">{value.label}</span>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

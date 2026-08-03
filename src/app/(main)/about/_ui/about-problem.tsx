@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import Image from "next/image";
 import {
   motion,
   useMotionValue,
   useTransform,
   animate,
   useInView,
+  type Variants,
 } from "framer-motion";
 import { WifiOff, MapPinOff, PhoneOff } from "lucide-react";
 
@@ -44,31 +46,55 @@ function StatCounter({ value, suffix = "", prefix = "" }: CounterProps) {
   );
 }
 
+const headerVariants: Variants = {
+  hidden: { opacity: 0, y: 12 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
+};
+
+const containerVariants: Variants = {
+  hidden: {},
+  visible: {
+    transition: { staggerChildren: 0.1 },
+  },
+};
+
+const cardVariants: Variants = {
+  hidden: { opacity: 0, y: 16 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] } },
+};
+
+const problemContainerVariants: Variants = {
+  hidden: {},
+  visible: {
+    transition: { staggerChildren: 0.12 },
+  },
+};
+
+const problems = [
+  {
+    icon: WifiOff,
+    title: "No Centralized Information",
+    description:
+      "Flood data exists but it's scattered across government websites, social media, and word-of-mouth. Rural communities often don't know water levels until it's too late.",
+    consequence: "Delayed evacuations cost lives",
+  },
+  {
+    icon: MapPinOff,
+    title: "Shelter Chaos",
+    description:
+      "When floods hit, people don't know where shelters are, whether they have capacity, or what facilities are available. Families wander in chest-deep water searching for safety.",
+    consequence: "Overcrowded shelters, underserved areas",
+  },
+  {
+    icon: PhoneOff,
+    title: "No Rescue Coordination",
+    description:
+      "Stranded people rely on phone calls to relatives or social media posts. There's no structured system for sending GPS-located rescue requests or tracking response status.",
+    consequence: "Duplicated efforts, missed rescues",
+  },
+];
+
 export default function AboutProblem() {
-  const headerVariants = {
-    hidden: { opacity: 0, y: 12 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
-  };
-
-  const containerVariants = {
-    hidden: {},
-    visible: {
-      transition: { staggerChildren: 0.1 },
-    },
-  };
-
-  const cardVariants = {
-    hidden: { opacity: 0, y: 16 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
-  };
-
-  const problemContainerVariants = {
-    hidden: {},
-    visible: {
-      transition: { staggerChildren: 0.12 },
-    },
-  };
-
   return (
     <section className="bg-muted/30 py-20 md:py-28">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -103,7 +129,7 @@ export default function AboutProblem() {
         >
           <motion.div
             variants={cardVariants}
-            className="bg-background rounded-xl p-5 border border-border text-center"
+            className="bg-background rounded-2xl p-5 border border-border text-center"
           >
             <StatCounter value={30} prefix="20-" suffix="%" />
             <p className="text-xs text-muted-foreground mt-1 leading-snug">
@@ -113,7 +139,7 @@ export default function AboutProblem() {
 
           <motion.div
             variants={cardVariants}
-            className="bg-background rounded-xl p-5 border border-border text-center"
+            className="bg-background rounded-2xl p-5 border border-border text-center"
           >
             <StatCounter value={700} suffix="+" />
             <p className="text-xs text-muted-foreground mt-1 leading-snug">
@@ -123,7 +149,7 @@ export default function AboutProblem() {
 
           <motion.div
             variants={cardVariants}
-            className="bg-background rounded-xl p-5 border border-border text-center"
+            className="bg-background rounded-2xl p-5 border border-border text-center"
           >
             <StatCounter value={10} suffix="M+" />
             <p className="text-xs text-muted-foreground mt-1 leading-snug">
@@ -133,7 +159,7 @@ export default function AboutProblem() {
 
           <motion.div
             variants={cardVariants}
-            className="bg-background rounded-xl p-5 border border-border text-center"
+            className="bg-background rounded-2xl p-5 border border-border text-center"
           >
             <StatCounter value={2} prefix="~$" suffix="B" />
             <p className="text-xs text-muted-foreground mt-1 leading-snug">
@@ -142,85 +168,77 @@ export default function AboutProblem() {
           </motion.div>
         </motion.div>
 
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
-          variants={problemContainerVariants}
-          className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-14"
-        >
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mt-14 items-stretch">
           <motion.div
-            variants={cardVariants}
-            className="bg-background rounded-xl p-6 border border-border flex flex-col justify-between"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+            variants={problemContainerVariants}
+            className="lg:col-span-3 grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-4"
           >
-            <div>
-              <div className="rounded-xl bg-destructive/8 size-12 flex items-center justify-center">
-                <WifiOff className="size-6 text-destructive" />
-              </div>
-              <h3 className="mt-4 text-base font-semibold text-foreground">
-                No Centralized Information
-              </h3>
-              <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-                Flood data exists but it&apos;s scattered across government
-                websites, social media, and word-of-mouth. Rural communities
-                often don&apos;t know water levels until it&apos;s too late.
-              </p>
-            </div>
-            <p className="mt-3 text-xs font-medium text-destructive">
-              → Delayed evacuations cost lives
-            </p>
+            {problems.map((problem) => {
+              const Icon = problem.icon;
+              return (
+                <motion.div
+                  key={problem.title}
+                  variants={cardVariants}
+                  className="group bg-background rounded-2xl p-6 border border-border flex flex-col justify-between transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:border-destructive/25"
+                >
+                  <div>
+                    <div className="rounded-xl bg-destructive/8 size-12 flex items-center justify-center transition-transform duration-300 group-hover:scale-105">
+                      <Icon className="size-6 text-destructive" />
+                    </div>
+                    <h3 className="mt-4 text-base font-semibold text-foreground">
+                      {problem.title}
+                    </h3>
+                    <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+                      {problem.description}
+                    </p>
+                  </div>
+                  <p className="mt-3 text-xs font-medium text-destructive">
+                    → {problem.consequence}
+                  </p>
+                </motion.div>
+              );
+            })}
           </motion.div>
 
           <motion.div
-            variants={cardVariants}
-            className="bg-background rounded-xl p-6 border border-border flex flex-col justify-between"
+            initial={{ opacity: 0, scale: 0.97 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            className="lg:col-span-2 relative rounded-2xl overflow-hidden ring-1 ring-border shadow-lg min-h-70"
           >
-            <div>
-              <div className="rounded-xl bg-destructive/8 size-12 flex items-center justify-center">
-                <MapPinOff className="size-6 text-destructive" />
-              </div>
-              <h3 className="mt-4 text-base font-semibold text-foreground">
-                Shelter Chaos
-              </h3>
-              <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-                When floods hit, people don&apos;t know where shelters are,
-                whether they have capacity, or what facilities are available.
-                Families wander in chest-deep water searching for safety.
+            <Image
+              src="/images/about/problem-water.jpg"
+              alt="A woman and boy collect drinking water from a raised tap surrounded by floodwater"
+              fill
+              className="object-cover"
+            />
+            <div
+              className="absolute inset-0"
+              style={{
+                background:
+                  "linear-gradient(to top, oklch(0.1 0.02 247 / 0.85) 0%, oklch(0.1 0.02 247 / 0.15) 55%, transparent 75%)",
+              }}
+            />
+            <div className="absolute inset-x-0 bottom-0 p-5">
+              <p className="text-sm text-white font-medium leading-relaxed">
+                Clean water becomes the scarcest resource — even standing in it.
               </p>
+              <span className="mt-1.5 block text-[10px] text-white/50">
+                Md shameem ul islam / Wikimedia Commons, CC BY 4.0
+              </span>
             </div>
-            <p className="mt-3 text-xs font-medium text-destructive">
-              → Overcrowded shelters, underserved areas
-            </p>
           </motion.div>
-
-          <motion.div
-            variants={cardVariants}
-            className="bg-background rounded-xl p-6 border border-border flex flex-col justify-between"
-          >
-            <div>
-              <div className="rounded-xl bg-destructive/8 size-12 flex items-center justify-center">
-                <PhoneOff className="size-6 text-destructive" />
-              </div>
-              <h3 className="mt-4 text-base font-semibold text-foreground">
-                No Rescue Coordination
-              </h3>
-              <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-                Stranded people rely on phone calls to relatives or social media
-                posts. There&apos;s no structured system for sending GPS-located
-                rescue requests or tracking response status.
-              </p>
-            </div>
-            <p className="mt-3 text-xs font-medium text-destructive">
-              → Duplicated efforts, missed rescues
-            </p>
-          </motion.div>
-        </motion.div>
+        </div>
 
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.6, delay: 0.4 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
           className="mt-14 text-center flex flex-col items-center"
         >
           <span className="text-4xl text-primary/15 font-serif block leading-none">
