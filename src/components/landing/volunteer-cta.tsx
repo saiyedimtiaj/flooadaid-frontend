@@ -69,23 +69,17 @@ export default function VolunteerCTA() {
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mt-6 md:mt-8 w-full sm:w-auto">
                 <Button
                   className="bg-white text-foreground hover:bg-white/90 font-bold transition-all duration-200 shadow-md group shrink-0"
-                  variant={"ghost"}
-                >
-                  <Link href="/get-involved" className="flex items-center gap-1.5">
+                  variant={"ghost"} nativeButton={false} render={<Link href="/get-involved" className="flex items-center gap-1.5" />}>
                     <Users className="h-4 w-4 mr-2 text-primary shrink-0 transition-transform duration-300 group-hover:scale-105" />
                     Register as Volunteer
-                  </Link>
-                </Button>
+                  </Button>
 
                 <Button
                   variant="outline"
-                  className="bg-transparent border-white/30 text-white hover:bg-white/10 hover:text-white font-bold transition-all duration-200 shrink-0"
-                >
-                  <Link href="/how-it-works" className="flex items-center gap-1.5">
+                  className="bg-transparent border-white/30 text-white hover:bg-white/10 hover:text-white font-bold transition-all duration-200 shrink-0" nativeButton={false} render={<Link href="/how-it-works" className="flex items-center gap-1.5" />}>
                     Learn More
                     <ArrowRight className="h-4 w-4 ml-2 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5" />
-                  </Link>
-                </Button>
+                  </Button>
               </div>
             </motion.div>
 

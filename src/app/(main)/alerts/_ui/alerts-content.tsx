@@ -2,6 +2,7 @@
 
 import { useState, useTransition, useMemo } from "react";
 import dynamic from "next/dynamic";
+import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Map, List, CloudOff, ChevronRight, Radar, Loader2 } from "lucide-react";
 import Link from "next/link";
@@ -10,7 +11,6 @@ import { AlertCard } from "./alert-card";
 import { AlertDetailSheet } from "./alert-detail-sheet";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useAlerts } from "@/lib/hooks/use-alerts";
 import { ALERT_SEVERITIES } from "@/lib/alert-severity-styles";
 import type { Alert, AlertSeverity } from "@/lib/types/api";
@@ -49,9 +49,14 @@ const SEVERITY_WEIGHT: Record<AlertSeverity, number> = {
 };
 
 export function AlertsContent() {
+  // Deep link from the home-page map: /alerts?district=<id>
+  const searchParams = useSearchParams();
+  const districtParam = Number(searchParams.get("district"));
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDivisionId, setSelectedDivisionId] = useState<number | null>(null);
-  const [selectedDistrictId, setSelectedDistrictId] = useState<number | null>(null);
+  const [selectedDistrictId, setSelectedDistrictId] = useState<number | null>(
+    Number.isInteger(districtParam) && districtParam > 0 ? districtParam : null,
+  );
   const [selectedSeverities, setSelectedSeverities] = useState<AlertSeverity[]>([]);
   const [locationFilter, setLocationFilter] = useState<SelectedLocation | null>(null);
 

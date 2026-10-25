@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useCurrentUser } from "@/lib/hooks/use-current-user";
@@ -42,46 +42,58 @@ function playChime() {
 }
 
 /**
- * Subscribes to the logged-in user's Pusher channel and reacts to new
- * notifications: refresh the query, play a chime, show a toast. Renders
- * nothing. No-ops entirely when Pusher env is not configured.
+ * One Pusher connection for the whole app:
+ * - `alerts` (public): new flood alerts refresh alert lists and the live map.
+ * - `sos-feed` (admins/volunteers): new SOS requests refresh the queue.
+ * - `user-<id>` (logged in): personal notifications with a chime + toast.
+ * Renders nothing; no-ops when Pusher env is not configured.
  */
 export function NotificationsRealtime() {
   const { data: user } = useCurrentUser();
   const queryClient = useQueryClient();
-  // Keep a ref to avoid re-subscribing on every render.
-  const boundRef = useRef(false);
+  const userId = user?.id;
+  const isStaff = user?.role === "ADMIN" || user?.role === "VOLUNTEER";
 
   useEffect(() => {
-    if (!PUSHER_KEY || !PUSHER_CLUSTER || !user?.id) return;
-    if (boundRef.current) return;
-    boundRef.current = true;
+    if (!PUSHER_KEY || !PUSHER_CLUSTER) return;
 
-    let cleanup: (() => void) | undefined;
+    // The import is async: if the effect is torn down before it resolves we
+    // must not connect at all, otherwise the socket would leak.
+    let cancelled = false;
+    let teardown: (() => void) | undefined;
 
-    // Dynamic import so pusher-js only loads when actually used.
     void import("pusher-js").then(({ default: Pusher }) => {
+      if (cancelled) return;
       const pusher = new Pusher(PUSHER_KEY, { cluster: PUSHER_CLUSTER });
-      const channel = pusher.subscribe(`user-${user.id}`);
 
-      const handler = (data: AppNotification) => {
-        queryClient.invalidateQueries({ queryKey: ["notifications"] });
-        playChime();
-        toast(data.title, { description: data.message });
-      };
+      const alerts = pusher.subscribe("alerts");
+      alerts.bind("alert-created", () => {
+        queryClient.invalidateQueries({ queryKey: ["alerts"] });
+        queryClient.invalidateQueries({ queryKey: ["stats"] });
+      });
 
-      channel.bind("notification", handler);
+      if (isStaff) {
+        pusher.subscribe("sos-feed").bind("sos-created", () => {
+          queryClient.invalidateQueries({ queryKey: ["sos"] });
+        });
+      }
 
-      cleanup = () => {
-        channel.unbind("notification", handler);
-        pusher.unsubscribe(`user-${user.id}`);
-        pusher.disconnect();
-        boundRef.current = false;
-      };
+      if (userId) {
+        pusher.subscribe(`user-${userId}`).bind("notification", (data: AppNotification) => {
+          queryClient.invalidateQueries({ queryKey: ["notifications"] });
+          playChime();
+          toast(data.title, { description: data.message });
+        });
+      }
+
+      teardown = () => pusher.disconnect();
     });
 
-    return () => cleanup?.();
-  }, [user?.id, queryClient]);
+    return () => {
+      cancelled = true;
+      teardown?.();
+    };
+  }, [userId, isStaff, queryClient]);
 
   return null;
 }

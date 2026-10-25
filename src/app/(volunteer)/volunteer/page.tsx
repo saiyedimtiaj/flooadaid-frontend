@@ -34,9 +34,7 @@ export default function VolunteerDashboardPage() {
               Tell us your skills, district, and availability so we can start assigning you SOS requests.
             </p>
           </div>
-          <Button className="font-semibold">
-            <Link href="/volunteer/profile">Set Up Profile</Link>
-          </Button>
+          <Button className="font-semibold" nativeButton={false} render={<Link href="/volunteer/profile" />}>Set Up Profile</Button>
         </Card>
       </div>
     );

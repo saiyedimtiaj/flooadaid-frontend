@@ -28,6 +28,9 @@ export default function VolunteerReliefPage() {
   const [shelterByAssignment, setShelterByAssignment] = useState<Record<string, string>>({});
 
   const holding = assignments?.filter((a) => a.status === "ASSIGNED") ?? [];
+  // Relief sent for a shelter's supply request defaults to that shelter.
+  const targetShelter = (a: (typeof holding)[number]) =>
+    shelterByAssignment[a.id] ?? a.supplyRequest?.shelter.id ?? "";
   const delivered = assignments?.filter((a) => a.status === "DELIVERED") ?? [];
 
   return (
@@ -65,11 +68,16 @@ export default function VolunteerReliefPage() {
                     {a.item} · {a.quantity}
                     {a.unit}
                   </p>
+                  {a.supplyRequest && (
+                    <Badge variant={a.supplyRequest.urgency === "CRITICAL" || a.supplyRequest.urgency === "HIGH" ? "danger" : "info"} className="mt-1">
+                      Requested by {a.supplyRequest.shelter.name}
+                    </Badge>
+                  )}
                   {a.note && <p className="text-xs text-muted-foreground mt-0.5">{a.note}</p>}
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <Select
-                    value={shelterByAssignment[a.id] ?? ""}
+                    value={targetShelter(a)}
                     onValueChange={(v) =>
                       setShelterByAssignment((prev) => ({ ...prev, [a.id]: v as string }))
                     }
@@ -92,10 +100,8 @@ export default function VolunteerReliefPage() {
                   <Button
                     size="sm"
                     className="gap-1.5 shrink-0"
-                    disabled={!shelterByAssignment[a.id] || deliver.isPending}
-                    onClick={() =>
-                      deliver.mutate({ id: a.id, shelterId: shelterByAssignment[a.id] })
-                    }
+                    disabled={!targetShelter(a) || deliver.isPending}
+                    onClick={() => deliver.mutate({ id: a.id, shelterId: targetShelter(a) })}
                   >
                     <Truck className="size-3.5" /> Deliver
                   </Button>

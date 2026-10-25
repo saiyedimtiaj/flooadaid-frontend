@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { Shelter } from "@/lib/types/api";
 import ShelterMiniMap from "./shelter-mini-map-client";
+import { useT } from "@/lib/i18n/use-t";
 
 interface ShelterDetailSheetProps {
   shelter: Shelter | null;
@@ -68,6 +69,7 @@ export default function ShelterDetailSheet({
   isOpen,
   onClose,
 }: ShelterDetailSheetProps) {
+  const { pick } = useT();
   const occupancyPercent = shelter
     ? Math.round((shelter.currentOccupancy / shelter.capacity) * 100)
     : 0;
@@ -94,12 +96,12 @@ export default function ShelterDetailSheet({
             <SheetHeader>
               <div className="flex items-center gap-2">
                 <span className={cn("size-2 rounded-full shrink-0", statusColorClass)} />
-                <SheetTitle className="text-lg">{shelter.name}</SheetTitle>
+                <SheetTitle className="text-lg">{pick(shelter.name, shelter.nameBn)}</SheetTitle>
               </div>
               <SheetDescription className="flex items-center gap-1">
                 <MapPin className="size-3 shrink-0" />
                 <span>
-                  {shelter.address} · {shelter.district.nameEn}
+                  {shelter.address} · {pick(shelter.district.nameEn, shelter.district.nameBn)}
                 </span>
               </SheetDescription>
             </SheetHeader>
@@ -180,27 +182,21 @@ export default function ShelterDetailSheet({
             </div>
 
             <SheetFooter className="flex-row gap-2">
-              <Button variant="outline" size="sm" className="flex-1 gap-1.5">
-                <a
+              <Button variant="outline" size="sm" className="flex-1 gap-1.5" nativeButton={false} render={<a
                   href={`https://www.google.com/maps/dir/?api=1&destination=${shelter.latitude},${shelter.longitude}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-1.5"
-                >
+                  className="flex items-center justify-center gap-1.5" />}>
                   <Navigation className="size-3.5" />
                   Directions
-                </a>
-              </Button>
+                </Button>
               {shelter.contactPhone && (
-                <Button size="sm" className="flex-1 gap-1.5">
-                  <a
+                <Button size="sm" className="flex-1 gap-1.5" nativeButton={false} render={<a
                     href={`tel:${shelter.contactPhone}`}
-                    className="flex items-center justify-center gap-1.5"
-                  >
+                    className="flex items-center justify-center gap-1.5" />}>
                     <Phone className="size-3.5" />
                     Call
-                  </a>
-                </Button>
+                  </Button>
               )}
             </SheetFooter>
           </>

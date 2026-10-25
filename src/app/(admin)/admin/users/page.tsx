@@ -1,12 +1,22 @@
 "use client";
 
+import { useState } from "react";
 import { ShieldCheck, Users, LifeBuoy, UserRound } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { DataTable, type Column } from "@/components/dashboard/data-table";
-import { useAllUsers } from "@/lib/hooks/use-users";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ConfirmDialog } from "@/components/ui/alert-dialog";
+import { useAllUsers, useUpdateUserRole } from "@/lib/hooks/use-users";
+import { useCurrentUser } from "@/lib/hooks/use-current-user";
 import type { AuthUser, Role } from "@/lib/types/auth";
 
 const ROLE_VARIANT: Record<Role, "danger" | "primary" | "success"> = {
@@ -19,8 +29,13 @@ function initialsOf(name: string) {
   return name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
 }
 
+const ROLES: Role[] = ["USER", "VOLUNTEER", "ADMIN"];
+
 export default function AdminUsersPage() {
   const { data: users, isLoading } = useAllUsers();
+  const { data: me } = useCurrentUser();
+  const updateRole = useUpdateUserRole();
+  const [pending, setPending] = useState<{ user: AuthUser; role: Role } | null>(null);
 
   const counts = {
     total: users?.length ?? 0,
@@ -52,7 +67,26 @@ export default function AdminUsersPage() {
     {
       key: "role",
       header: "Role",
-      render: (u) => <Badge variant={ROLE_VARIANT[u.role]}>{u.role}</Badge>,
+      render: (u) =>
+        u.id === me?.id ? (
+          <Badge variant={ROLE_VARIANT[u.role]}>{u.role} (you)</Badge>
+        ) : (
+          <Select
+            value={u.role}
+            onValueChange={(role) => role && role !== u.role && setPending({ user: u, role: role as Role })}
+          >
+            <SelectTrigger size="sm" className="w-32 rounded-lg" aria-label={`Role for ${u.name}`}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {ROLES.map((r) => (
+                <SelectItem key={r} value={r}>
+                  {r}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ),
     },
     {
       key: "verified",
@@ -97,6 +131,33 @@ export default function AdminUsersPage() {
         emptyIcon={Users}
         emptyTitle="No users yet"
         emptyDescription="Registered accounts will appear here."
+      />
+
+      <ConfirmDialog
+        open={pending !== null}
+        onOpenChange={(open) => !open && setPending(null)}
+        title="Change role?"
+        description={
+          pending
+            ? `${pending.user.name} will become ${pending.role}. ${
+                pending.role === "ADMIN"
+                  ? "Admins can manage every alert, shelter, SOS and user."
+                  : pending.role === "VOLUNTEER"
+                    ? "They still need a volunteer profile and verification before SOS assignments."
+                    : "They lose access to volunteer and admin tools immediately."
+              }`
+            : undefined
+        }
+        confirmLabel="Change Role"
+        isLoading={updateRole.isPending}
+        onConfirm={() => {
+          if (pending) {
+            updateRole.mutate(
+              { id: pending.user.id, role: pending.role },
+              { onSettled: () => setPending(null) },
+            );
+          }
+        }}
       />
     </div>
   );

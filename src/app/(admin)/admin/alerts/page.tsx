@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, useWatch, Controller } from "react-hook-form";
 import { Plus, Radar, Trash2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +31,16 @@ import type { Alert, AlertSeverity } from "@/lib/types/api";
 
 const SEVERITIES: AlertSeverity[] = ["NORMAL", "WATCH", "WARNING", "DANGER", "CRITICAL"];
 
+/** ISO -> value for <input type="datetime-local"> in the browser's timezone. */
+function toLocalInput(iso: string | null | undefined) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+type AlertFormValues = Omit<AlertInput, "expiresAt"> & { expiresAt: string };
+
 function AlertFormSheet({
   open,
   onOpenChange,
@@ -42,7 +52,7 @@ function AlertFormSheet({
 }) {
   const createAlert = useCreateAlert();
   const updateAlert = useUpdateAlert();
-  const { register, handleSubmit, control, reset } = useForm<AlertInput>({
+  const { register, handleSubmit, control, reset } = useForm<AlertFormValues>({
     values: editing
       ? {
           title: editing.title,
@@ -51,6 +61,7 @@ function AlertFormSheet({
           severity: editing.severity,
           districtId: editing.districtId,
           waterLevelCm: editing.waterLevelCm ?? undefined,
+          expiresAt: toLocalInput(editing.expiresAt),
         }
       : {
           title: "",
@@ -59,14 +70,20 @@ function AlertFormSheet({
           severity: "WATCH",
           districtId: undefined as unknown as number,
           waterLevelCm: undefined,
+          expiresAt: "",
         },
   });
 
-  const onSubmit = async (values: AlertInput) => {
+  const severity = useWatch({ control, name: "severity" });
+  const broadcasts = severity === "WARNING" || severity === "DANGER" || severity === "CRITICAL";
+
+  const onSubmit = async ({ expiresAt, ...rest }: AlertFormValues) => {
+    const expiry = expiresAt ? new Date(expiresAt).toISOString() : null;
     if (editing) {
-      await updateAlert.mutateAsync({ id: editing.id, data: values });
+      // null clears a previously set expiry
+      await updateAlert.mutateAsync({ id: editing.id, data: { ...rest, expiresAt: expiry } });
     } else {
-      await createAlert.mutateAsync(values);
+      await createAlert.mutateAsync({ ...rest, expiresAt: expiry ?? undefined });
       reset();
     }
     onOpenChange(false);
@@ -129,6 +146,18 @@ function AlertFormSheet({
             <Label>Water Level (cm)</Label>
             <Input type="number" {...register("waterLevelCm", { valueAsNumber: true })} />
           </div>
+          <div className="flex flex-col gap-1.5">
+            <Label>Expires at (optional)</Label>
+            <Input type="datetime-local" {...register("expiresAt")} />
+            <p className="text-xs text-muted-foreground">
+              After this time the alert drops off the public map automatically. Leave empty to keep it until you deactivate it.
+            </p>
+          </div>
+          {!editing && broadcasts && (
+            <p className="text-xs rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-400 p-2.5">
+              {severity} alerts notify every registered user whose home district matches.
+            </p>
+          )}
           <SheetFooter className="px-0">
             <Button type="submit" disabled={isSubmitting} className="font-semibold">
               {editing ? "Save Changes" : "Create Alert"}

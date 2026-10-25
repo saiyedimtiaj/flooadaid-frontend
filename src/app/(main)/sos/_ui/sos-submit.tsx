@@ -15,6 +15,7 @@ import {
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useT, type MessageKey } from "@/lib/i18n/use-t";
 
 interface SOSSubmitProps {
   isSubmitting: boolean;
@@ -26,19 +27,10 @@ interface SOSSubmitProps {
   address?: string;
 }
 
-const NEXT_STEPS = [
-  {
-    title: "Request reviewed",
-    description: "Your request is being reviewed by our response team",
-  },
-  {
-    title: "Team assigned",
-    description: "A volunteer or rescue team will be assigned to your location",
-  },
-  {
-    title: "Stay updated",
-    description: "You'll see live status updates below — keep this page open",
-  },
+const NEXT_STEPS: { title: MessageKey; description: MessageKey }[] = [
+  { title: "sos.next1Title", description: "sos.next1Desc" },
+  { title: "sos.next2Title", description: "sos.next2Desc" },
+  { title: "sos.next3Title", description: "sos.next3Desc" },
 ];
 
 export default function SOSSubmit({
@@ -50,6 +42,7 @@ export default function SOSSubmit({
   helpTypes = [],
   address,
 }: SOSSubmitProps) {
+  const { t } = useT();
   if (isSubmitted) {
     return (
       <motion.div
@@ -89,7 +82,7 @@ export default function SOSSubmit({
           </motion.div>
 
           <h2 className="relative text-2xl md:text-4xl font-extrabold text-foreground mt-6">
-            SOS Sent Successfully
+            {t("sos.sent")}
           </h2>
 
           <motion.div
@@ -103,15 +96,12 @@ export default function SOSSubmit({
             </span>
           </motion.div>
 
-          <p className="relative text-sm md:text-base text-muted-foreground mt-3 max-w-md mx-auto leading-relaxed">
-            Your emergency request has been received. Our team is reviewing it
-            and will dispatch help as soon as possible.
-          </p>
+          <p className="relative text-sm md:text-base text-muted-foreground mt-3 max-w-md mx-auto leading-relaxed">{t("sos.sentBody")}</p>
 
           {sosId && (
             <div className="relative mt-4 mx-auto max-w-sm">
               <p className="text-xs text-muted-foreground mb-1.5">
-                Save this ID to check status later from any device:
+                {t("sos.saveId")}
               </p>
               <button
                 type="button"
@@ -136,7 +126,7 @@ export default function SOSSubmit({
           >
             <Card className="rounded-3xl p-6 border border-border bg-card h-full">
               <h3 className="text-sm font-bold text-foreground mb-5">
-                Request Summary
+                {t("sos.summary")}
               </h3>
               <div className="flex flex-col gap-5">
                 <div className="flex items-start gap-3">
@@ -145,7 +135,7 @@ export default function SOSSubmit({
                   </div>
                   <div className="min-w-0">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
-                      People
+                      {t("sos.summaryPeople")}
                     </span>
                     <span className="text-base font-semibold text-foreground">
                       {peopleCount ?? "—"}
@@ -159,7 +149,7 @@ export default function SOSSubmit({
                   </div>
                   <div className="min-w-0">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
-                      Help Needed
+                      {t("sos.summaryHelp")}
                     </span>
                     <span className="text-base font-semibold text-foreground truncate block">
                       {helpTypes.length > 0 ? helpTypes.join(", ") : "—"}
@@ -173,7 +163,7 @@ export default function SOSSubmit({
                   </div>
                   <div className="min-w-0">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
-                      Location
+                      {t("sos.summaryLocation")}
                     </span>
                     <span className="text-base font-semibold text-foreground truncate block" title={address}>
                       {address || "—"}
@@ -191,7 +181,7 @@ export default function SOSSubmit({
           >
             <Card className="rounded-3xl p-6 border border-border bg-card h-full">
               <h3 className="text-sm font-bold text-foreground mb-5">
-                What happens next
+                {t("sos.next")}
               </h3>
               <div className="relative flex flex-col gap-5">
                 <div
@@ -200,7 +190,7 @@ export default function SOSSubmit({
                 />
                 {NEXT_STEPS.map((step, idx) => (
                   <motion.div
-                    key={step.title}
+                    key={t(step.title)}
                     initial={{ opacity: 0, x: -8 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.7 + idx * 0.15 }}
@@ -211,10 +201,10 @@ export default function SOSSubmit({
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-foreground leading-none">
-                        {step.title}
+                        {t(step.title)}
                       </p>
                       <p className="text-sm text-muted-foreground leading-relaxed mt-1">
-                        {step.description}
+                        {t(step.description)}
                       </p>
                     </div>
                   </motion.div>
@@ -240,18 +230,15 @@ export default function SOSSubmit({
             className="gap-2 rounded-xl font-semibold"
           >
             <Radio className="size-4" />
-            Track My Request
+            {t("sos.track")}
           </Button>
 
-          <Button variant="outline" className="gap-2 rounded-xl font-semibold">
-            <a
+          <Button variant="outline" className="gap-2 rounded-xl font-semibold" nativeButton={false} render={<a
               href="tel:999"
-              className="flex items-center justify-center gap-2"
-            >
+              className="flex items-center justify-center gap-2" />}>
               <Phone className="size-4" />
-              Call 999
-            </a>
-          </Button>
+              {t("sos.call999")}
+            </Button>
         </motion.div>
       </motion.div>
     );
@@ -297,7 +284,7 @@ export default function SOSSubmit({
                 className="flex items-center gap-2"
               >
                 <Loader2 className="size-6 animate-spin" />
-                Sending your SOS...
+                {t("sos.sending")}
               </motion.span>
             ) : (
               <motion.span
@@ -308,7 +295,7 @@ export default function SOSSubmit({
                 transition={{ duration: 0.15 }}
                 className="flex items-center gap-2"
               >
-                🆘 Send SOS for Help
+                {t("sos.send")}
               </motion.span>
             )}
           </AnimatePresence>
@@ -318,7 +305,7 @@ export default function SOSSubmit({
       <div className="flex items-center justify-center gap-1.5 mt-3 select-none">
         <Lock className="size-3 text-muted-foreground" />
         <span className="text-[11px] text-muted-foreground font-medium">
-          Your information is safe and shared only with rescue teams
+          {t("sos.safeInfo")}
         </span>
       </div>
     </div>

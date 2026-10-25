@@ -19,17 +19,21 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/use-t";
 
-const MapFallback = () => (
+function MapFallback() {
+  const { t } = useT();
+  return (
   <Skeleton className="w-full h-full flex flex-col items-center justify-center bg-muted/40 gap-3 rounded-2xl border border-border/50">
     <div className="relative flex items-center justify-center size-12 rounded-full bg-destructive/10 text-destructive border border-destructive/20">
       <MapPin className="size-5 animate-bounce" />
     </div>
     <span className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
-      Loading the map...
+      {t("sos.loadingMap")}
     </span>
   </Skeleton>
-);
+  );
+}
 
 const DynamicSOSMap = dynamic(() => import("./sos-leaflet-map"), {
   ssr: false,
@@ -51,6 +55,7 @@ export default function SOSLocation({
   address,
   setAddress,
 }: SOSLocationProps) {
+  const { t } = useT();
   const [detectState, setDetectState] = useState<DetectState>("idle");
 
   const handleDetectLocation = () => {
@@ -102,10 +107,10 @@ export default function SOSLocation({
           </div>
           <div className="flex flex-col">
             <h2 className="text-base sm:text-lg font-black text-foreground tracking-tight">
-              Where Are You?
+              {t("sos.where")}
             </h2>
             <p className="text-xs text-muted-foreground">
-              Tap your location on the map, or press the button to find it automatically
+              {t("sos.whereHint")}
             </p>
           </div>
         </div>
@@ -146,25 +151,25 @@ export default function SOSLocation({
                       {detectState === "detecting" && (
                         <>
                           <Loader2 className="size-3.5 animate-spin" />
-                          <span>Finding you...</span>
+                          <span>{t("sos.finding")}</span>
                         </>
                       )}
                       {detectState === "success" && (
                         <>
                           <CheckCircle className="size-3.5" />
-                          <span>Location found</span>
+                          <span>{t("sos.found")}</span>
                         </>
                       )}
                       {detectState === "error" && (
                         <>
                           <XCircle className="size-3.5" />
-                          <span>Try again</span>
+                          <span>{t("sos.tryAgain")}</span>
                         </>
                       )}
                       {detectState === "idle" && (
                         <>
                           <Crosshair className="size-3.5" />
-                          <span>Use My Current Location</span>
+                          <span>{t("sos.useMyLocation")}</span>
                         </>
                       )}
                     </motion.div>
@@ -190,7 +195,7 @@ export default function SOSLocation({
                     </div>
                     <div className="flex flex-col">
                       <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">
-                        Your location is set
+                        {t("sos.locationSet")}
                       </span>
                       <span className="text-xs font-mono text-foreground font-bold tracking-tight mt-0.5">
                         {location.lat.toFixed(5)}, {location.lng.toFixed(5)}
@@ -198,7 +203,7 @@ export default function SOSLocation({
                     </div>
                   </div>
                   <span className="hidden sm:inline-flex px-2 py-0.5 text-[9px] font-black text-emerald-600 bg-emerald-500/10 border border-emerald-500/20 rounded-md uppercase tracking-wider">
-                    Ready
+                    {t("sos.ready")}
                   </span>
                 </motion.div>
               ) : (
@@ -212,11 +217,9 @@ export default function SOSLocation({
                   </div>
                   <div className="flex flex-col">
                     <span className="text-[10px] font-bold text-amber-600 uppercase tracking-widest">
-                      Location not set yet
+                      {t("sos.locationNotSet")}
                     </span>
-                    <span className="text-xs text-muted-foreground mt-0.5">
-                      Tap your spot on the map above, or press &ldquo;Use My Current Location&rdquo;.
-                    </span>
+                    <span className="text-xs text-muted-foreground mt-0.5">{t("sos.locationNotSetHint")}</span>
                   </div>
                 </motion.div>
               )}
@@ -227,7 +230,7 @@ export default function SOSLocation({
               <div className="flex items-center justify-between">
                 <label className="text-[11px] font-bold text-muted-foreground flex items-center gap-1.5">
                   <AlertCircle className="size-3.5 text-muted-foreground/60" />{" "}
-                  Nearby landmark <span className="font-normal text-muted-foreground/60">(optional)</span>
+                  {t("sos.landmark")} <span className="font-normal text-muted-foreground/60">{t("sos.optional")}</span>
                 </label>
                 <span className="text-[10px] text-muted-foreground font-semibold">
                   {address.length} / 200
@@ -239,7 +242,7 @@ export default function SOSLocation({
                 maxLength={200}
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
-                placeholder="Example: red brick school next to the mosque, we are on the 2nd floor."
+                placeholder={t("sos.landmarkPlaceholder")}
                 className="resize-none focus-visible:ring-destructive/30 focus-visible:ring-1 focus-visible:border-destructive text-xs sm:text-sm bg-background/50 border-border/80 rounded-xl p-3 placeholder:text-muted-foreground/50 transition-all shadow-none"
               />
             </div>

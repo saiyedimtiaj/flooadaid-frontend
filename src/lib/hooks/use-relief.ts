@@ -63,12 +63,19 @@ export interface ReliefAssignment {
   unit: string;
   volunteerId: string;
   shelterId: string | null;
+  supplyRequestId: string | null;
   status: "ASSIGNED" | "DELIVERED" | "CANCELLED";
   note: string | null;
   createdAt: string;
   deliveredAt: string | null;
   volunteer?: { id: string; name: string; phone: string | null };
   shelter?: { id: string; name: string } | null;
+  /** Set when the items were dispatched for a shelter's supply request. */
+  supplyRequest?: {
+    id: string;
+    urgency: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+    shelter: { id: string; name: string };
+  } | null;
 }
 
 export interface ReliefHolding {
@@ -116,6 +123,7 @@ export function useReliefAssignments(params: { mine?: boolean } = {}) {
 }
 
 function invalidateInventory(qc: ReturnType<typeof useQueryClient>) {
+  qc.invalidateQueries({ queryKey: ["supply-requests"] });
   qc.invalidateQueries({ queryKey: ["relief-stock"] });
   qc.invalidateQueries({ queryKey: ["relief-summary"] });
   qc.invalidateQueries({ queryKey: ["relief-holdings"] });
@@ -158,5 +166,17 @@ export function useDeliverAssignment() {
       toast.success("Delivery recorded");
     },
     onError: (error) => toast.error(error instanceof ApiError ? error.message : "Failed to record delivery"),
+  });
+}
+
+export function useCancelAssignment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.patch<ReliefAssignment>(`/relief/assignments/${id}/cancel`),
+    onSuccess: () => {
+      invalidateInventory(qc);
+      toast.success("Assignment cancelled — items returned to the store");
+    },
+    onError: (error) => toast.error(error instanceof ApiError ? error.message : "Failed to cancel assignment"),
   });
 }

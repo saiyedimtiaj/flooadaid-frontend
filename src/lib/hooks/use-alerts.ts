@@ -13,13 +13,15 @@ export interface AlertInput {
   districtId: number;
   waterLevelCm?: number;
   isActive?: boolean;
+  /** ISO date-time; null clears an existing expiry on update. */
+  expiresAt?: string | null;
 }
 
 export interface AlertsQueryParams {
   limit?: number;
   isActive?: boolean;
   districtId?: number;
-  /** Comma-separated severities, e.g. "danger,critical" (case-insensitive) */
+  /** Comma-separated severities, e.g. "DANGER,CRITICAL" (case-insensitive) */
   severity?: string;
 }
 

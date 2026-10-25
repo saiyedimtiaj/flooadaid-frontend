@@ -2,11 +2,16 @@
 
 import { BarChart3, Download, FileText, Siren, Package, MapPinned, Radar, Home, Users } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { StatCard } from "@/components/dashboard/stat-card";
-import { useDashboardStats, useReliefSummary, useSosSummary, reportExportUrls } from "@/lib/hooks/use-reports";
+import {
+  useDashboardStats,
+  useDownloadReport,
+  useReportsReliefSummary,
+  useSosSummary,
+} from "@/lib/hooks/use-reports";
 import { cn } from "@/lib/utils";
 
 const SOS_STATUS_COLOR: Record<string, string> = {
@@ -57,7 +62,8 @@ function BarMeter({
 export default function AdminReportsPage() {
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
   const { data: sosSummary, isLoading: sosLoading } = useSosSummary();
-  const { data: reliefSummary, isLoading: reliefLoading } = useReliefSummary();
+  const { data: reliefSummary, isLoading: reliefLoading } = useReportsReliefSummary();
+  const download = useDownloadReport();
 
   return (
     <div className="flex flex-col gap-6">
@@ -67,14 +73,23 @@ export default function AdminReportsPage() {
         description="Platform-wide statistics and exportable reports"
         action={
           <div className="flex items-center gap-2">
-            <a href={reportExportUrls.csv} download className={cn(buttonVariants({ variant: "outline" }), "gap-2 font-semibold")}>
+            <Button
+              variant="outline"
+              className="gap-2 font-semibold"
+              isLoading={download.isPending && download.variables === "csv"}
+              onClick={() => download.mutate("csv")}
+            >
               <Download className="h-4 w-4" />
               Export CSV
-            </a>
-            <a href={reportExportUrls.pdf} download className={cn(buttonVariants(), "gap-2 font-semibold")}>
+            </Button>
+            <Button
+              className="gap-2 font-semibold"
+              isLoading={download.isPending && download.variables === "pdf"}
+              onClick={() => download.mutate("pdf")}
+            >
               <FileText className="h-4 w-4" />
               Export PDF
-            </a>
+            </Button>
           </div>
         }
       />

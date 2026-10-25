@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { ALERT_SEVERITY_STYLES } from "@/lib/alert-severity-styles";
 import { timeAgo } from "@/lib/format-time-ago";
 import type { Alert } from "@/lib/types/api";
+import { useT } from "@/lib/i18n/use-t";
 
 const severityBgColors: Record<Alert["severity"], string> = {
   CRITICAL: "bg-rose-500",
@@ -21,6 +22,7 @@ interface AlertCardProps {
 }
 
 export function AlertCard({ alert, onClick }: AlertCardProps) {
+  const { pick } = useT();
   return (
     <Card
       onClick={onClick}
@@ -37,7 +39,7 @@ export function AlertCard({ alert, onClick }: AlertCardProps) {
             >
               {ALERT_SEVERITY_STYLES[alert.severity].label}
             </Badge>
-            <span className="text-xs font-semibold text-muted-foreground">{alert.district.nameEn}</span>
+            <span className="text-xs font-semibold text-muted-foreground">{pick(alert.district.nameEn, alert.district.nameBn)}</span>
           </div>
           <span className="text-xs text-muted-foreground font-mono shrink-0">{timeAgo(alert.createdAt)}</span>
         </div>

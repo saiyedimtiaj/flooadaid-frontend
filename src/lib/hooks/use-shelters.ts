@@ -20,6 +20,7 @@ export interface ShelterInput {
   hasMedical?: boolean;
   hasElectricity?: boolean;
   hasToilet?: boolean;
+  isActive?: boolean;
 }
 
 export interface SheltersQueryParams {
@@ -83,6 +84,19 @@ export function useCreateShelter() {
   });
 }
 
+export function useUpdateShelter() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<ShelterInput> }) =>
+      api.patch<Shelter>(`/shelters/${id}`, data),
+    onSuccess: () => {
+      invalidateShelters(queryClient);
+      toast.success("Shelter updated");
+    },
+    onError: (error) => toast.error(error instanceof ApiError ? error.message : "Failed to update shelter"),
+  });
+}
+
 export function useUpdateShelterOccupancy() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -102,8 +116,8 @@ export function useDeleteShelter() {
     mutationFn: (id: string) => api.delete(`/shelters/${id}`),
     onSuccess: () => {
       invalidateShelters(queryClient);
-      toast.success("Shelter removed");
+      toast.success("Shelter closed");
     },
-    onError: (error) => toast.error(error instanceof ApiError ? error.message : "Failed to remove shelter"),
+    onError: (error) => toast.error(error instanceof ApiError ? error.message : "Failed to close shelter"),
   });
 }

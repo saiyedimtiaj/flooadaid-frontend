@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useForm, Controller } from "react-hook-form";
-import { Plus, MapPin, Trash2, Check, Users, Loader2 } from "lucide-react";
+import { useForm, useWatch, Controller } from "react-hook-form";
+import { Plus, MapPin, Trash2, Check, Users, Loader2, Pencil, RotateCcw } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,38 +35,62 @@ import {
   useCreateShelter,
   useDeleteShelter,
   useShelters,
+  useUpdateShelter,
   useUpdateShelterOccupancy,
   type ShelterInput,
 } from "@/lib/hooks/use-shelters";
 import type { Shelter } from "@/lib/types/api";
 
+/** Create a shelter, or edit one when `shelter` is given (remount via `key` to switch). */
 function ShelterFormSheet({
   open,
   onOpenChange,
+  shelter,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  shelter?: Shelter | null;
 }) {
   const createShelter = useCreateShelter();
-  const { register, handleSubmit, control, reset, setValue, watch } = useForm<ShelterInput>({
-    defaultValues: {
-      name: "",
-      address: "",
-      latitude: undefined,
-      longitude: undefined,
-      capacity: undefined,
-      contactPhone: "",
-      contactName: "",
-      hasFood: false,
-      hasWater: false,
-      hasMedical: false,
-      hasElectricity: false,
-      hasToilet: false,
-    },
+  const updateShelter = useUpdateShelter();
+  const isEdit = !!shelter;
+  const { register, handleSubmit, control, reset, setValue } = useForm<ShelterInput>({
+    defaultValues: shelter
+      ? {
+          name: shelter.name,
+          nameBn: shelter.nameBn ?? "",
+          address: shelter.address,
+          districtId: shelter.districtId,
+          latitude: shelter.latitude,
+          longitude: shelter.longitude,
+          capacity: shelter.capacity,
+          contactPhone: shelter.contactPhone ?? "",
+          contactName: shelter.contactName ?? "",
+          hasFood: shelter.hasFood,
+          hasWater: shelter.hasWater,
+          hasMedical: shelter.hasMedical,
+          hasElectricity: shelter.hasElectricity,
+          hasToilet: shelter.hasToilet,
+        }
+      : {
+          name: "",
+          nameBn: "",
+          address: "",
+          latitude: undefined,
+          longitude: undefined,
+          capacity: undefined,
+          contactPhone: "",
+          contactName: "",
+          hasFood: false,
+          hasWater: false,
+          hasMedical: false,
+          hasElectricity: false,
+          hasToilet: false,
+        },
   });
 
-  const lat = watch("latitude");
-  const lng = watch("longitude");
+  const lat = useWatch({ control, name: "latitude" });
+  const lng = useWatch({ control, name: "longitude" });
   const pickedLocation =
     typeof lat === "number" && typeof lng === "number" ? { lat, lng } : null;
 
@@ -75,8 +99,13 @@ function ShelterFormSheet({
       toast.error("Please set the shelter location on the map");
       return;
     }
-    await createShelter.mutateAsync(values);
-    reset();
+    const data = { ...values, nameBn: values.nameBn || undefined };
+    if (shelter) {
+      await updateShelter.mutateAsync({ id: shelter.id, data });
+    } else {
+      await createShelter.mutateAsync(data);
+      reset();
+    }
     onOpenChange(false);
   };
 
@@ -84,12 +113,16 @@ function ShelterFormSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="overflow-y-auto">
         <SheetHeader>
-          <SheetTitle>New Shelter</SheetTitle>
+          <SheetTitle>{isEdit ? "Edit Shelter" : "New Shelter"}</SheetTitle>
         </SheetHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 px-4">
           <div className="flex flex-col gap-1.5">
             <Label>Name</Label>
             <Input {...register("name", { required: true })} placeholder="Banshkhali High School Shelter" />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label>Name in Bangla (optional)</Label>
+            <Input {...register("nameBn")} placeholder="বাঁশখালী উচ্চ বিদ্যালয় আশ্রয়কেন্দ্র" />
           </div>
           <div className="flex flex-col gap-1.5">
             <Label>Address</Label>
@@ -155,8 +188,12 @@ function ShelterFormSheet({
             ))}
           </div>
           <SheetFooter className="px-0">
-            <Button type="submit" disabled={createShelter.isPending} className="font-semibold">
-              Add Shelter
+            <Button
+              type="submit"
+              disabled={createShelter.isPending || updateShelter.isPending}
+              className="font-semibold"
+            >
+              {isEdit ? "Save Changes" : "Add Shelter"}
             </Button>
           </SheetFooter>
         </form>
@@ -234,10 +271,13 @@ function OccupancyDialog({
 function ShelterCard({
   shelter,
   onDelete,
+  onEdit,
 }: {
   shelter: Shelter;
   onDelete: (shelter: Shelter) => void;
+  onEdit: (shelter: Shelter) => void;
 }) {
+  const updateShelter = useUpdateShelter();
   const [occOpen, setOccOpen] = useState(false);
   const rate = Math.round((shelter.currentOccupancy / shelter.capacity) * 100);
   const tint = occupancyTint(rate);
@@ -251,14 +291,32 @@ function ShelterCard({
             {shelter.district.nameEn} · {shelter.address}
           </p>
         </div>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          className="text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0"
-          onClick={() => onDelete(shelter)}
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-        </Button>
+        <div className="flex items-center shrink-0">
+          <Button variant="ghost" size="icon-sm" aria-label="Edit shelter" onClick={() => onEdit(shelter)}>
+            <Pencil className="h-3.5 w-3.5" />
+          </Button>
+          {shelter.isActive ? (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Close shelter"
+              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+              onClick={() => onDelete(shelter)}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          ) : (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Reopen shelter"
+              disabled={updateShelter.isPending}
+              onClick={() => updateShelter.mutate({ id: shelter.id, data: { isActive: true } })}
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="flex items-center gap-2">
@@ -291,10 +349,21 @@ function ShelterCard({
 }
 
 export default function AdminSheltersPage() {
-  const { data, isLoading } = useShelters({ limit: 50 });
+  const [showClosed, setShowClosed] = useState(false);
+  const { data, isLoading } = useShelters({ limit: 100, isActive: !showClosed });
   const deleteShelter = useDeleteShelter();
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [editing, setEditing] = useState<Shelter | null>(null);
   const [toDelete, setToDelete] = useState<Shelter | null>(null);
+
+  const openCreate = () => {
+    setEditing(null);
+    setSheetOpen(true);
+  };
+  const openEdit = (shelter: Shelter) => {
+    setEditing(shelter);
+    setSheetOpen(true);
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -303,12 +372,27 @@ export default function AdminSheltersPage() {
         title="Shelter Management"
         description="Add, edit and monitor emergency shelters"
         action={
-          <Button className="gap-2 font-semibold" onClick={() => setSheetOpen(true)}>
+          <Button className="gap-2 font-semibold" onClick={openCreate}>
             <Plus className="h-4 w-4" />
             Add Shelter
           </Button>
         }
       />
+
+      <div className="inline-flex self-start rounded-xl border border-border bg-muted/40 p-1">
+        {([false, true] as const).map((closed) => (
+          <button
+            key={String(closed)}
+            type="button"
+            onClick={() => setShowClosed(closed)}
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+              showClosed === closed ? "bg-background text-foreground shadow-xs" : "text-muted-foreground"
+            }`}
+          >
+            {closed ? "Closed" : "Open"}
+          </button>
+        ))}
+      </div>
 
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -319,17 +403,17 @@ export default function AdminSheltersPage() {
       ) : data && data.data.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {data.data.map((shelter) => (
-            <ShelterCard key={shelter.id} shelter={shelter} onDelete={setToDelete} />
+            <ShelterCard key={shelter.id} shelter={shelter} onDelete={setToDelete} onEdit={openEdit} />
           ))}
         </div>
       ) : (
         <Card className="rounded-3xl border border-border bg-card">
           <EmptyState
             icon={MapPin}
-            title="No shelters added yet"
+            title={showClosed ? "No closed shelters" : "No shelters added yet"}
             description="Add emergency shelters so people can find safe places nearby."
             action={
-              <Button className="gap-2 font-semibold" onClick={() => setSheetOpen(true)}>
+              <Button className="gap-2 font-semibold" onClick={openCreate}>
                 <Plus className="h-4 w-4" />
                 Add Shelter
               </Button>
@@ -338,14 +422,23 @@ export default function AdminSheltersPage() {
         </Card>
       )}
 
-      <ShelterFormSheet open={sheetOpen} onOpenChange={setSheetOpen} />
+      <ShelterFormSheet
+        key={editing?.id ?? "new"}
+        shelter={editing}
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+      />
 
       <ConfirmDialog
         open={toDelete !== null}
         onOpenChange={(open) => !open && setToDelete(null)}
-        title="Remove this shelter?"
-        description={toDelete ? `"${toDelete.name}" will be permanently removed from the map.` : undefined}
-        confirmLabel="Remove Shelter"
+        title="Close this shelter?"
+        description={
+          toDelete
+            ? `"${toDelete.name}" will be hidden from the public map. Its relief history is kept and you can reopen it from the Closed tab.`
+            : undefined
+        }
+        confirmLabel="Close Shelter"
         variant="destructive"
         isLoading={deleteShelter.isPending}
         onConfirm={() => {

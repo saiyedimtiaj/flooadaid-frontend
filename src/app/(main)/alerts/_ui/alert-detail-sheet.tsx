@@ -101,17 +101,14 @@ export function AlertDetailSheet({ alert, isOpen, onClose }: AlertDetailSheetPro
         </div>
 
         <div className="p-4 border-t border-border bg-background/95 backdrop-blur-md flex gap-3 shrink-0">
-          <Button className="flex-1 font-bold group bg-primary hover:bg-primary/95 text-primary-foreground" size="lg">
-            <a
+          <Button className="flex-1 font-bold group bg-primary hover:bg-primary/95 text-primary-foreground" size="lg" nativeButton={false} render={<a
               href={`https://www.google.com/maps/search/?api=1&query=shelters+near+${alert.district.nameEn}`}
               target="_blank"
               rel="noreferrer"
-              className="flex items-center justify-center gap-2 w-full"
-            >
+              className="flex items-center justify-center gap-2 w-full" />}>
               <Navigation className="h-4 w-4" />
               Find Nearby Shelters
-            </a>
-          </Button>
+            </Button>
           <Button
             variant="outline"
             size="lg"

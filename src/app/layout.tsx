@@ -1,15 +1,21 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Noto_Sans_Bengali, Plus_Jakarta_Sans } from "next/font/google";
 import { QueryProvider } from "@/components/providers/query-provider";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { NotificationsRealtime } from "@/components/providers/notifications-realtime"
+import { ThemeProvider } from "@/components/providers/theme-provider"
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
   variable: "--font-sans",
+});
+
+const notoSansBengali = Noto_Sans_Bengali({
+  subsets: ["bengali"],
+  variable: "--font-bengali",
 });
 
 export const metadata: Metadata = {
@@ -24,13 +30,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={cn("h-full", "antialiased", plusJakartaSans.className)}>
+    <html
+      lang="en"
+      className={cn("h-full", "antialiased", plusJakartaSans.className, plusJakartaSans.variable, notoSansBengali.variable)}
+      suppressHydrationWarning
+    >
       <body className="min-h-full flex flex-col font-sans" suppressHydrationWarning>
-        <Toaster />
-        <QueryProvider>
-          <NotificationsRealtime />
-          <TooltipProvider delay={200}>{children}</TooltipProvider>
-        </QueryProvider>
+        <ThemeProvider>
+          <Toaster />
+          <QueryProvider>
+            <NotificationsRealtime />
+            <TooltipProvider delay={200}>{children}</TooltipProvider>
+          </QueryProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

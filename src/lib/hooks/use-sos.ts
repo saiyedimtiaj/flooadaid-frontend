@@ -10,6 +10,7 @@ import type {
   PublicSosStats,
   SosRequest,
   SosStatus,
+  SosTracking,
 } from "@/lib/types/api";
 
 export interface CreateSosInput {
@@ -22,9 +23,6 @@ export interface CreateSosInput {
   peopleCount: PeopleCount;
   helpType: HelpType[];
   description?: string;
-  /** Single photo — kept for backward compatibility with the current backend. */
-  photoUrl?: string;
-  /** Multiple photos — used once the backend accepts an array (Phase 2). */
   photoUrls?: string[];
 }
 
@@ -48,13 +46,34 @@ export function useCreateManualSos() {
   });
 }
 
-/** Public — anyone holding the (unguessable) id can poll their own request's status. */
+/**
+ * Public tracker. Anyone holding the id sees status + timeline; the
+ * requester, assigned volunteer and admins also get contact details.
+ * Polling stops once the request is closed.
+ */
 export function useSosTracking(id: string | null) {
   return useQuery({
     queryKey: ["sos-tracking", id],
-    queryFn: () => api.get<SosRequest>(`/sos/${id}`),
+    queryFn: () => api.get<SosTracking>(`/sos/${id}`),
     enabled: !!id,
-    refetchInterval: (query) => (query.state.data?.status === "RESOLVED" ? false : 10_000),
+    refetchInterval: (query) => {
+      const status = query.state.data?.status;
+      return status === "RESOLVED" || status === "CANCELLED" ? false : 10_000;
+    },
+  });
+}
+
+/** Logged-in requester withdrawing their own SOS. */
+export function useCancelOwnSos() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.patch<SosRequest>(`/sos/${id}/cancel`),
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: ["sos-tracking", id] });
+      toast.success("Your SOS request was cancelled");
+    },
+    onError: (error) =>
+      toast.error(error instanceof ApiError ? error.message : "Failed to cancel request"),
   });
 }
 
@@ -88,6 +107,7 @@ export function useUpdateSosStatus() {
       api.patch<SosRequest>(`/sos/${id}/status`, { status, note }),
     onSuccess: () => {
       invalidateSos(queryClient);
+      queryClient.invalidateQueries({ queryKey: ["volunteers", "me", "tasks"] });
       toast.success("Status updated");
     },
     onError: (error) => toast.error(error instanceof ApiError ? error.message : "Failed to update status"),

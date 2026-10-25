@@ -9,27 +9,57 @@ import {
   Check,
   Phone,
   ShieldAlert,
-  Star,
   Ban,
+  History,
 } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import type { SosRequest, SosStatus } from "@/lib/types/api"
+import type { SosStatus, SosTracking } from "@/lib/types/api"
+import { useT, type MessageKey } from "@/lib/i18n/use-t"
 
 interface SOSTrackerProps {
   isVisible: boolean
-  sos: SosRequest | null | undefined
+  sos: SosTracking | null | undefined
   isLoading: boolean
 }
 
-const STEPS: { id: SosStatus; label: string; desc: string; icon: typeof Clock }[] = [
-  { id: "PENDING", label: "Pending", desc: "Request received, waiting for review", icon: Clock },
-  { id: "ASSIGNED", label: "Assigned", desc: "A volunteer/team has been assigned", icon: UserCheck },
-  { id: "IN_PROGRESS", label: "En Route", desc: "Rescue team is on the way", icon: Truck },
-  { id: "RESOLVED", label: "Resolved", desc: "Rescued successfully", icon: CheckCircle },
+const STEPS: { id: SosStatus; label: MessageKey; desc: string; icon: typeof Clock }[] = [
+  { id: "PENDING", label: "tracker.status.PENDING", desc: "Request received, waiting for review", icon: Clock },
+  { id: "ASSIGNED", label: "tracker.status.ASSIGNED", desc: "A volunteer/team has been assigned", icon: UserCheck },
+  { id: "IN_PROGRESS", label: "tracker.status.IN_PROGRESS", desc: "Rescue team is on the way", icon: Truck },
+  { id: "RESOLVED", label: "tracker.status.RESOLVED", desc: "Rescued successfully", icon: CheckCircle },
 ]
 
+/** Every status change with its note, newest last. */
+function Timeline({ sos }: { sos: SosTracking }) {
+  const { t } = useT()
+  if (!sos.history?.length) return null
+  return (
+    <div className="mt-5 pt-5 border-t border-border">
+      <h4 className="flex items-center gap-2 text-sm font-bold text-foreground mb-3">
+        <History className="size-4 text-muted-foreground" />
+        {t("tracker.timeline")}
+      </h4>
+      <ol className="relative border-l border-border ml-2 flex flex-col gap-4">
+        {sos.history.map((h) => (
+          <li key={h.id} className="ml-4">
+            <span className="absolute -left-1.5 mt-1.5 size-3 rounded-full border-2 border-background bg-primary" />
+            <p className="text-sm font-semibold text-foreground">
+              {t(`tracker.status.${h.status}` as MessageKey)}
+            </p>
+            {h.note && <p className="text-xs text-muted-foreground mt-0.5">{h.note}</p>}
+            <time className="text-[11px] text-muted-foreground/70" dateTime={h.createdAt}>
+              {new Date(h.createdAt).toLocaleString()}
+            </time>
+          </li>
+        ))}
+      </ol>
+    </div>
+  )
+}
+
 export default function SOSTracker({ isVisible, sos, isLoading }: SOSTrackerProps) {
+  const { t } = useT()
   if (!isVisible) return null
 
   if (isLoading || !sos) {
@@ -61,6 +91,9 @@ export default function SOSTracker({ isVisible, sos, isLoading }: SOSTrackerProp
               This SOS request (#{sos.id.slice(-6).toUpperCase()}) was cancelled.
             </p>
           </div>
+        </Card>
+        <Card className="rounded-3xl p-6 md:p-7 border border-border bg-card mt-4">
+          <Timeline sos={sos} />
         </Card>
       </motion.div>
     )
@@ -142,7 +175,7 @@ export default function SOSTracker({ isVisible, sos, isLoading }: SOSTrackerProp
                           : "text-muted-foreground"
                       }`}
                     >
-                      {step.label}
+                      {t(step.label)}
                     </span>
                   </div>
 
@@ -223,7 +256,7 @@ export default function SOSTracker({ isVisible, sos, isLoading }: SOSTrackerProp
                           : "text-muted-foreground"
                       }`}
                     >
-                      {step.label}
+                      {t(step.label)}
                     </span>
                     <span className="text-xs text-muted-foreground mt-0.5">
                       {step.desc}
@@ -302,16 +335,15 @@ export default function SOSTracker({ isVisible, sos, isLoading }: SOSTrackerProp
                         </div>
                       </div>
 
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-8 text-xs gap-1.5 self-start sm:self-auto rounded-md"
-                      >
-                        <a href={`tel:${sos.assignedTo.phone}`} className="flex items-center gap-1.5">
-                          <Phone className="size-3.5" />
-                          Call Volunteer
-                        </a>
-                      </Button>
+                      {"phone" in sos.assignedTo && sos.assignedTo.phone && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 text-xs gap-1.5 self-start sm:self-auto rounded-md" nativeButton={false} render={<a href={`tel:${sos.assignedTo.phone}`} className="flex items-center gap-1.5" />}>
+                            <Phone className="size-3.5" />
+                            Call Volunteer
+                          </Button>
+                      )}
                     </motion.div>
                   )}
                 </motion.div>
@@ -356,16 +388,11 @@ export default function SOSTracker({ isVisible, sos, isLoading }: SOSTrackerProp
                       You have been marked as rescued. We&apos;re glad you&apos;re safe.
                     </span>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <Button size="sm" className="h-8 text-xs gap-1 rounded-md">
-                      <Star className="size-3" />
-                      Rate Response
-                    </Button>
-                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
+          <Timeline sos={sos} />
         </Card>
       </motion.div>
     </AnimatePresence>

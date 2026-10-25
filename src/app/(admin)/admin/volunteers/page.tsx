@@ -120,9 +120,15 @@ export default function AdminVolunteersPage() {
             Verify
           </Button>
         ) : (
-          <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-500">
-            <CircleCheck className="size-3.5" /> Done
-          </span>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="gap-1.5 text-muted-foreground hover:text-destructive"
+            onClick={() => setToVerify(v)}
+          >
+            <CircleCheck className="size-3.5 text-emerald-600 dark:text-emerald-500" />
+            Revoke
+          </Button>
         ),
     },
   ];
@@ -154,16 +160,23 @@ export default function AdminVolunteersPage() {
       <ConfirmDialog
         open={toVerify !== null}
         onOpenChange={(open) => !open && setToVerify(null)}
-        title="Verify this volunteer?"
+        title={toVerify?.verified ? "Remove verification?" : "Verify this volunteer?"}
         description={
           toVerify
-            ? `${toVerify.user?.name} will be marked as a verified volunteer and can be assigned to SOS requests.`
+            ? toVerify.verified
+              ? `${toVerify.user?.name} will no longer be offered for new SOS assignments until verified again.`
+              : `${toVerify.user?.name} will be marked as a verified volunteer and can be assigned to SOS requests.`
             : undefined
         }
-        confirmLabel="Verify Volunteer"
+        confirmLabel={toVerify?.verified ? "Remove Verification" : "Verify Volunteer"}
         isLoading={verify.isPending}
         onConfirm={() => {
-          if (toVerify) verify.mutate(toVerify.id);
+          if (toVerify) {
+            verify.mutate(
+              { id: toVerify.id, verified: !toVerify.verified },
+              { onSuccess: () => setToVerify(null) },
+            );
+          }
         }}
       />
     </div>

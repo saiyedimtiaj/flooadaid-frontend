@@ -17,6 +17,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { Shelter } from "@/lib/types/api";
+import { useT } from "@/lib/i18n/use-t";
 
 interface ShelterCardProps {
   shelter: Shelter;
@@ -73,6 +74,7 @@ export default function ShelterCard({
   onSelect,
   index,
 }: ShelterCardProps) {
+  const { pick } = useT();
   const occupancyPercent = Math.round(
     (shelter.currentOccupancy / shelter.capacity) * 100,
   );
@@ -147,7 +149,7 @@ export default function ShelterCard({
             }}
             className="relative text-base font-bold text-foreground leading-snug mt-3.5 hover:text-primary transition-colors"
           >
-            {shelter.name}
+            {pick(shelter.name, shelter.nameBn)}
           </h3>
           <div className="relative flex items-center gap-1 mt-1 text-muted-foreground">
             <MapPin className="size-3 shrink-0" />
@@ -205,28 +207,22 @@ export default function ShelterCard({
             className="mt-auto pt-3.5 border-t border-border flex gap-2"
             onClick={(e) => e.stopPropagation()}
           >
-            <Button className="flex-1 gap-1.5">
-              <a
+            <Button className="flex-1 gap-1.5" nativeButton={false} render={<a
                 href={`https://www.google.com/maps/dir/?api=1&destination=${shelter.latitude},${shelter.longitude}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-1.5"
-              >
+                className="flex items-center justify-center gap-1.5" />}>
                 <Navigation className="size-3.5" />
                 Directions
-              </a>
-            </Button>
+              </Button>
 
             {shelter.contactPhone && (
-              <Button variant="outline" className="flex-1 gap-1.5">
-                <a
+              <Button variant="outline" className="flex-1 gap-1.5" nativeButton={false} render={<a
                   href={`tel:${shelter.contactPhone}`}
-                  className="flex items-center justify-center gap-1.5"
-                >
+                  className="flex items-center justify-center gap-1.5" />}>
                   <Phone className="size-3.5" />
                   Call
-                </a>
-              </Button>
+                </Button>
             )}
           </div>
         </div>

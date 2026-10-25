@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
-import { Send, Users, Truck, Package, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
+import { Send, Users, Truck, Package, Loader2, Undo2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,8 +30,9 @@ import {
   useReliefAssignments,
   useReliefHoldings,
   useCreateAssignment,
+  useCancelAssignment,
 } from "@/lib/hooks/use-relief";
-import { useAllUsers } from "@/lib/hooks/use-users";
+import { useAssignableVolunteers } from "@/lib/hooks/use-volunteers";
 
 interface AssignForm {
   item: string;
@@ -54,18 +55,14 @@ function AssignDialog({
   onOpenChange: (o: boolean) => void;
 }) {
   const { data: stock } = useReliefStock();
-  const { data: users } = useAllUsers();
+  const { options: volunteers } = useAssignableVolunteers();
   const createAssignment = useCreateAssignment();
-  const volunteers = useMemo(
-    () => users?.filter((u) => u.role === "VOLUNTEER") ?? [],
-    [users],
-  );
 
-  const { register, handleSubmit, reset, watch, setValue } = useForm<AssignForm>({
+  const { register, handleSubmit, reset, setValue, control } = useForm<AssignForm>({
     defaultValues: { item: "", quantity: 1, volunteerId: "", note: "" },
   });
-  const item = watch("item");
-  const volunteerId = watch("volunteerId");
+  const item = useWatch({ control, name: "item" });
+  const volunteerId = useWatch({ control, name: "volunteerId" });
 
   const onSubmit = async (values: AssignForm) => {
     await createAssignment.mutateAsync({
@@ -157,6 +154,7 @@ function AssignDialog({
 export function ReliefAssignmentsView() {
   const { data: assignments, isLoading } = useReliefAssignments();
   const { data: holdings } = useReliefHoldings();
+  const cancelAssignment = useCancelAssignment();
   const [assignOpen, setAssignOpen] = useState(false);
 
   return (
@@ -236,10 +234,32 @@ export function ReliefAssignmentsView() {
                     </p>
                     <p className="text-xs text-muted-foreground truncate">
                       {a.volunteer?.name}
-                      {a.shelter ? ` → ${a.shelter.name}` : ""}
+                      {a.shelter
+                        ? ` → ${a.shelter.name}`
+                        : a.supplyRequest
+                          ? ` → for ${a.supplyRequest.shelter.name}`
+                          : ""}
                     </p>
                   </div>
-                  <Badge variant={STATUS_VARIANT[a.status]}>{a.status.toLowerCase()}</Badge>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <Badge variant={STATUS_VARIANT[a.status]}>{a.status.toLowerCase()}</Badge>
+                    {a.status === "ASSIGNED" && (
+                      <Button
+                        size="icon-sm"
+                        variant="ghost"
+                        title="Cancel and return items to the store"
+                        aria-label="Cancel assignment"
+                        disabled={cancelAssignment.isPending}
+                        onClick={() => {
+                          if (window.confirm(`Cancel ${a.quantity} ${a.unit} ${a.item} held by ${a.volunteer?.name}? The items go back to the store.`)) {
+                            cancelAssignment.mutate(a.id);
+                          }
+                        }}
+                      >
+                        <Undo2 className="size-3.5" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

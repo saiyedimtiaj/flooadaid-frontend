@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAlerts } from "@/lib/hooks/use-alerts";
 import { timeAgo } from "@/lib/format-time-ago";
 import type { AlertSeverity } from "@/lib/types/api";
+import { useT } from "@/lib/i18n/use-t";
 
 const severityStyles: Record<AlertSeverity, { bar: string; badge: string }> = {
   CRITICAL: {
@@ -50,6 +51,7 @@ const rowVariants: Variants = {
 };
 
 export default function LatestAlerts() {
+  const { t, pick } = useT();
   const { data, isLoading } = useAlerts({ limit: 5, isActive: true });
   const alerts = data?.data ?? [];
 
@@ -101,13 +103,13 @@ export default function LatestAlerts() {
                           <span
                             className={`inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-extrabold tracking-wider rounded-sm border leading-none select-none ${style.badge}`}
                           >
-                            {alert.severity}
+                            {t(`severity.${alert.severity}`)}
                           </span>
                           <span className="text-muted-foreground text-xs leading-none select-none">
                             ·
                           </span>
                           <span className="text-xs sm:text-sm font-bold text-foreground leading-none">
-                            {alert.district.nameEn}
+                            {pick(alert.district.nameEn, alert.district.nameBn)}
                           </span>
                         </div>
                         <span className="hidden sm:inline text-xs font-semibold text-muted-foreground shrink-0 tabular-nums">
@@ -116,7 +118,7 @@ export default function LatestAlerts() {
                       </div>
 
                       <h3 className="text-sm md:text-base font-semibold text-foreground leading-snug mt-1.5 pr-2 group-hover:text-primary transition-colors duration-150">
-                        {alert.title}
+                        {pick(alert.title, alert.titleBn)}
                       </h3>
 
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mt-2">

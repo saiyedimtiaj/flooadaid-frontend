@@ -9,8 +9,8 @@ import {
   useMap,
   useMapEvents,
 } from "react-leaflet";
-import L from "leaflet";
-import { motion, AnimatePresence } from "framer-motion";
+import type { CircleMarker as LeafletCircleMarker } from "leaflet";
+import { motion } from "framer-motion";
 import { Navigation, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -84,7 +84,7 @@ export default function ShelterMapInner({
 }: ShelterMapInnerProps) {
   const [isLocating, setIsLocating] = useState(false);
   const [shouldFlyToUser, setShouldFlyToUser] = useState(false);
-  const markerRefs = useRef<{ [key: string]: any }>({});
+  const markerRefs = useRef<Record<string, LeafletCircleMarker>>({});
 
   const selectedShelter =
     shelters.find((s) => s.id === selectedShelterId) || null;
@@ -114,7 +114,7 @@ export default function ShelterMapInner({
         setShouldFlyToUser(true);
         setIsLocating(false);
       },
-      (error) => {
+      () => {
         setIsLocating(false);
         toast.error("Location Access Denied", {
           description:

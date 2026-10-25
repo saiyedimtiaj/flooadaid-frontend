@@ -34,9 +34,7 @@ export default function VolunteerTasksPage() {
         <p className="text-sm text-muted-foreground">
           Complete your volunteer profile to start receiving tasks.
         </p>
-        <Button className="font-semibold">
-          <Link href="/volunteer/profile">Set Up Profile</Link>
-        </Button>
+        <Button className="font-semibold" nativeButton={false} render={<Link href="/volunteer/profile" />}>Set Up Profile</Button>
       </Card>
     );
   }

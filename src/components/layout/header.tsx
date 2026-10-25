@@ -28,19 +28,22 @@ import {
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api-client";
 import { useCurrentUser, useInvalidateCurrentUser } from "@/lib/hooks/use-current-user";
+import { useT, type MessageKey } from "@/lib/i18n/use-t";
+import { LanguageToggle } from "./language-toggle";
 
 interface NavLink {
   href: string;
-  label: string;
+  label: MessageKey;
   danger: boolean;
 }
 
 const navLinks: NavLink[] = [
-  { href: "/", label: "Home", danger: false },
-  { href: "/alerts", label: "Alerts", danger: false },
-  { href: "/shelters", label: "Shelters", danger: false },
-  { href: "/sos", label: "Emergency SOS", danger: true },
-  { href: "/about", label: "About", danger: false },
+  { href: "/", label: "nav.home", danger: false },
+  { href: "/alerts", label: "nav.alerts", danger: false },
+  { href: "/shelters", label: "nav.shelters", danger: false },
+  { href: "/missing-persons", label: "nav.missing", danger: false },
+  { href: "/sos", label: "nav.sos", danger: true },
+  { href: "/about", label: "nav.about", danger: false },
 ];
 
 function initialsOf(name: string) {
@@ -61,6 +64,7 @@ export default function Navbar() {
   const drawerRef = useRef<HTMLDivElement>(null);
   const { data: user } = useCurrentUser();
   const invalidateCurrentUser = useInvalidateCurrentUser();
+  const { t } = useT();
 
   const handleLogout = async () => {
     try {
@@ -173,7 +177,7 @@ export default function Navbar() {
                         <span className="relative inline-flex rounded-full h-2 w-2 bg-destructive"></span>
                       </span>
                     )}
-                    {link.label}
+                    {t(link.label)}
                   </span>
                 </Link>
               );
@@ -183,6 +187,13 @@ export default function Navbar() {
           {/* Action Buttons Zone */}
           <div className="flex items-center gap-3">
             <div className="hidden md:flex items-center gap-2.5">
+              <LanguageToggle
+                className={cn(
+                  !scrolled && isHomePage
+                    ? "text-white hover:bg-white/10"
+                    : "text-foreground hover:bg-accent",
+                )}
+              />
               {user ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger className="outline-none">
@@ -206,12 +217,12 @@ export default function Navbar() {
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => router.push("/dashboard")}>
                       <LayoutDashboard className="h-4 w-4" />
-                      Dashboard
+                      {t("nav.dashboard")}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout} variant="destructive">
                       <LogOut className="h-4 w-4" />
-                      Log out
+                      {t("nav.logout")}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -223,24 +234,18 @@ export default function Navbar() {
                     !scrolled && isHomePage
                       ? "text-white hover:bg-white/10 hover:text-white"
                       : "text-foreground hover:bg-accent",
-                  )}
-                >
-                  <Link href="/login" className="flex items-center gap-1.5">
+                  )} nativeButton={false} render={<Link href="/login" className="flex items-center gap-1.5" />}>
                     <LogIn className="size-4" />
-                    <span>Sign In</span>
-                  </Link>
-                </Button>
+                    <span>{t("nav.signIn")}</span>
+                  </Button>
               )}
 
               <Button
                 variant="destructive"
-                className="rounded-full shadow-md shadow-destructive/10 hover:shadow-lg hover:shadow-destructive/20 transition-all"
-              >
-                <Link href="/sos" className="flex items-center gap-2">
+                className="rounded-full shadow-md shadow-destructive/10 hover:shadow-lg hover:shadow-destructive/20 transition-all" nativeButton={false} render={<Link href="/sos" className="flex items-center gap-2" />}>
                   <HeartHandshake className="size-4" />
-                  <span className="font-semibold">Get Help Now</span>
-                </Link>
-              </Button>
+                  <span className="font-semibold">{t("nav.getHelp")}</span>
+                </Button>
             </div>
             <button
               ref={triggerRef}
@@ -280,7 +285,7 @@ export default function Navbar() {
           >
             <div className="flex items-center justify-between h-16 px-5 border-b border-border/40">
               <span className="font-bold text-lg text-foreground tracking-tight">
-                Menu Navigation
+                {t("nav.menu")}
               </span>
               <button
                 type="button"
@@ -319,7 +324,7 @@ export default function Navbar() {
                       {link.danger && (
                         <span className="h-2 w-2 rounded-full bg-destructive animate-pulse" />
                       )}
-                      {link.label}
+                      {t(link.label)}
                     </span>
                     <ChevronRight className="size-4 opacity-40 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
                   </Link>
@@ -332,17 +337,15 @@ export default function Navbar() {
               />
 
               <div className="flex flex-col gap-3 px-1 mt-2">
+                <LanguageToggle className="justify-center border border-border/60 h-11 rounded-xl text-foreground hover:bg-accent" />
                 {user ? (
                   <>
                     <Button
                       variant="outline"
-                      className="w-full justify-center rounded-xl text-foreground bg-background hover:bg-accent h-11 border-border/60"
-                    >
-                      <Link href="/dashboard" onClick={() => setMenuOpen(false)}>
+                      className="w-full justify-center rounded-xl text-foreground bg-background hover:bg-accent h-11 border-border/60" nativeButton={false} render={<Link href="/dashboard" onClick={() => setMenuOpen(false)} />}>
                         <LayoutDashboard className="size-4 mr-1.5" />
-                        Dashboard
-                      </Link>
-                    </Button>
+                        {t("nav.dashboard")}
+                      </Button>
                     <Button
                       variant="ghost"
                       className="w-full justify-center rounded-xl text-destructive hover:bg-destructive/10 h-11"
@@ -352,29 +355,23 @@ export default function Navbar() {
                       }}
                     >
                       <LogOut className="size-4 mr-1.5" />
-                      Log out
+                      {t("nav.logout")}
                     </Button>
                   </>
                 ) : (
                   <Button
                     variant="outline"
-                    className="w-full justify-center rounded-xl text-foreground bg-background hover:bg-accent h-11 border-border/60"
-                  >
-                    <Link href="/login" onClick={() => setMenuOpen(false)}>
+                    className="w-full justify-center rounded-xl text-foreground bg-background hover:bg-accent h-11 border-border/60" nativeButton={false} render={<Link href="/login" onClick={() => setMenuOpen(false)} />}>
                       <LogIn className="size-4 mr-1.5" />
-                      Sign In
-                    </Link>
-                  </Button>
+                      {t("nav.signIn")}
+                    </Button>
                 )}
                 <Button
                   variant="destructive"
-                  className="w-full justify-center rounded-xl flex items-center gap-2 h-11 shadow-sm"
-                >
-                  <Link href="/sos" onClick={() => setMenuOpen(false)}>
+                  className="w-full justify-center rounded-xl flex items-center gap-2 h-11 shadow-sm" nativeButton={false} render={<Link href="/sos" onClick={() => setMenuOpen(false)} />}>
                     <HeartHandshake className="size-4" />
-                    <span className="font-semibold">Get Help Now</span>
-                  </Link>
-                </Button>
+                    <span className="font-semibold">{t("nav.getHelp")}</span>
+                  </Button>
               </div>
             </nav>
 

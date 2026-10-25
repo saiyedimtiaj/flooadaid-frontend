@@ -7,6 +7,7 @@ export interface AuthUser {
   role: Role;
   phone: string | null;
   emailVerified: string | null;
+  districtId?: number | null;
   createdAt: string;
   updatedAt?: string;
 }

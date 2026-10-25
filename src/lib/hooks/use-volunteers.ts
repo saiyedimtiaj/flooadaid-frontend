@@ -20,6 +20,22 @@ export function useVolunteers() {
   });
 }
 
+/**
+ * Verified + available volunteers as `{ id: userId, name }` options — the
+ * people an admin may assign SOS requests or relief to.
+ */
+export function useAssignableVolunteers() {
+  const query = useVolunteers();
+  const options =
+    query.data
+      ?.filter((p) => p.verified && p.isAvailable && p.user)
+      .map((p) => ({
+        id: p.user!.id,
+        name: p.district ? `${p.user!.name} · ${p.district.nameEn}` : p.user!.name,
+      })) ?? [];
+  return { ...query, options };
+}
+
 export interface NearbyVolunteer {
   id: string;
   name: string;
@@ -90,10 +106,11 @@ export function useRegisterVolunteer() {
 export function useVerifyVolunteer() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.patch<VolunteerProfile>(`/volunteers/${id}/verify`),
-    onSuccess: () => {
+    mutationFn: ({ id, verified = true }: { id: string; verified?: boolean }) =>
+      api.patch<VolunteerProfile>(`/volunteers/${id}/verify`, { verified }),
+    onSuccess: (_, { verified = true }) => {
       queryClient.invalidateQueries({ queryKey: ["volunteers"] });
-      toast.success("Volunteer verified");
+      toast.success(verified ? "Volunteer verified" : "Verification removed");
     },
     onError: (error) => toast.error(error instanceof ApiError ? error.message : "Failed to verify"),
   });

@@ -30,6 +30,7 @@ import { toast } from "sonner";
 import { useDistricts } from "@/lib/hooks/use-locations";
 import { uploadImageToCloudinary } from "@/lib/cloudinary";
 import { SOSFormData } from "./types";
+import { useT } from "@/lib/i18n/use-t";
 
 export default function SOSForm() {
   const { watch, setValue, register, control } = useFormContext<SOSFormData>();
@@ -37,6 +38,7 @@ export default function SOSForm() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: districts } = useDistricts();
+  const { t, pick } = useT();
 
   const peopleCount = watch("peopleCount");
   const helpTypes = watch("helpTypes");
@@ -101,7 +103,7 @@ export default function SOSForm() {
   const helpTypeOptions = [
     {
       id: "Rescue",
-      label: "Water Rescue",
+      label: t("sos.help.rescue"),
       icon: LifeBuoy,
       color: "from-rose-500/10 to-red-600/5",
       border: "border-red-500/20 hover:border-red-500/50",
@@ -110,7 +112,7 @@ export default function SOSForm() {
     },
     {
       id: "Food",
-      label: "Food Ration",
+      label: t("sos.help.food"),
       icon: UtensilsCrossed,
       color: "from-amber-500/10 to-orange-600/5",
       border: "border-amber-500/20 hover:border-amber-500/50",
@@ -119,7 +121,7 @@ export default function SOSForm() {
     },
     {
       id: "Medicine",
-      label: "Medical Care",
+      label: t("sos.help.medicine"),
       icon: Cross,
       color: "from-sky-500/10 to-blue-600/5",
       border: "border-sky-500/20 hover:border-sky-500/50",
@@ -128,7 +130,7 @@ export default function SOSForm() {
     },
     {
       id: "Water",
-      label: "Clean Water",
+      label: t("sos.help.water"),
       icon: Droplets,
       color: "from-blue-500/10 to-indigo-600/5",
       border: "border-blue-500/20 hover:border-blue-500/50",
@@ -138,10 +140,10 @@ export default function SOSForm() {
   ];
 
   const peopleOptions = [
-    { value: "1" as const, label: "Single", desc: "1 Person" },
-    { value: "2-5" as const, label: "Family", desc: "2 to 5" },
-    { value: "5-10" as const, label: "Group", desc: "5 to 10" },
-    { value: "10+" as const, label: "Mass", desc: "10+ People" },
+    { value: "1" as const, label: t("sos.people.single"), desc: t("sos.people.singleDesc") },
+    { value: "2-5" as const, label: t("sos.people.family"), desc: t("sos.people.familyDesc") },
+    { value: "5-10" as const, label: t("sos.people.group"), desc: t("sos.people.groupDesc") },
+    { value: "10+" as const, label: t("sos.people.mass"), desc: t("sos.people.massDesc") },
   ];
 
   return (
@@ -154,7 +156,7 @@ export default function SOSForm() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
             </span>
-            Emergency Help Request
+            {t("sos.badge")}
           </div>
           <div className="flex items-center gap-4">
             <div className="text-5xl font-black tracking-tighter text-red-500/20 font-mono select-none">
@@ -162,10 +164,10 @@ export default function SOSForm() {
             </div>
             <div>
               <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">
-                Tell Us About Your Situation
+                {t("sos.step2Title")}
               </h1>
               <p className="text-xs sm:text-sm text-muted-foreground mt-1 max-w-xl">
-                Answer a few simple questions so rescuers know how to help you.
+                {t("sos.step2Body")}
               </p>
             </div>
           </div>
@@ -181,10 +183,10 @@ export default function SOSForm() {
               </div>
               <div className="flex flex-col">
                 <h3 className="text-sm font-black uppercase tracking-wider text-foreground">
-                  Your District
+                  {t("sos.district")}
                 </h3>
                 <p className="text-xs text-muted-foreground">
-                  Which district are you in?
+                  {t("sos.districtHint")}
                 </p>
               </div>
             </div>
@@ -198,9 +200,12 @@ export default function SOSForm() {
                   onValueChange={(val) => field.onChange(Number(val))}
                 >
                   <SelectTrigger className="w-full data-[size=default]:h-12 rounded-xl">
-                    <SelectValue placeholder="Select district...">
+                    <SelectValue placeholder={t("sos.selectDistrict")}>
                       {(val: string) =>
-                        districts?.find((d) => String(d.id) === val)?.nameEn ??
+                        (() => {
+                          const d = districts?.find((x) => String(x.id) === val);
+                          return d ? pick(d.nameEn, d.nameBn) : undefined;
+                        })() ??
                         "Select district..."
                       }
                     </SelectValue>
@@ -208,7 +213,7 @@ export default function SOSForm() {
                   <SelectContent>
                     {districts?.map((district) => (
                       <SelectItem key={district.id} value={String(district.id)}>
-                        {district.nameEn}
+                        {pick(district.nameEn, district.nameBn)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -224,10 +229,10 @@ export default function SOSForm() {
               </div>
               <div className="flex flex-col">
                 <h3 className="text-sm font-black uppercase tracking-wider text-foreground">
-                  How Many People Need Help?
+                  {t("sos.people")}
                 </h3>
                 <p className="text-xs text-muted-foreground">
-                  Count everyone who needs to be rescued
+                  {t("sos.peopleHint")}
                 </p>
               </div>
             </div>
@@ -282,15 +287,15 @@ export default function SOSForm() {
                 </div>
                 <div className="flex flex-col">
                   <h3 className="text-sm font-black uppercase tracking-wider text-foreground">
-                    What Help Do You Need?
+                    {t("sos.help")}
                   </h3>
                   <p className="text-xs text-muted-foreground">
-                    Tap all the things you need — you can choose more than one
+                    {t("sos.helpHint")}
                   </p>
                 </div>
               </div>
               <span className="text-[10px] font-black tracking-widest text-muted-foreground/60 uppercase hidden sm:inline">
-                Multi-Select
+                {t("sos.multi")}
               </span>
             </div>
 
@@ -343,10 +348,10 @@ export default function SOSForm() {
               </div>
               <div className="flex flex-col">
                 <h3 className="text-sm font-black uppercase tracking-wider text-foreground">
-                  Anything Else? (Optional)
+                  {t("sos.details")}
                 </h3>
                 <p className="text-xs text-muted-foreground">
-                  Tell rescuers anything important — where you are hiding, injuries, children, etc.
+                  {t("sos.detailsHint")}
                 </p>
               </div>
             </div>
@@ -356,7 +361,7 @@ export default function SOSForm() {
                 rows={4}
                 maxLength={500}
                 {...register("description")}
-                placeholder="Example: Water is rising fast. We are on the roof. Two small children with us and one elderly person who cannot walk."
+                placeholder={t("sos.detailsPlaceholder")}
                 className="resize-none border-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-sm p-4 placeholder:text-muted-foreground/40 shadow-none"
               />
               <div className="flex items-center justify-end p-2 bg-muted/20 rounded-xl border-t border-border/40">
@@ -372,17 +377,17 @@ export default function SOSForm() {
           <div className="flex flex-col gap-5 p-6 rounded-3xl border border-border/60 bg-muted/5">
             <div className="flex flex-col gap-1">
               <h3 className="text-base font-black uppercase">
-                Your Name
+                {t("sos.name")}
               </h3>
               <p className="text-xs text-muted-foreground">
-                So rescuers know who they are looking for
+                {t("sos.nameHint")}
               </p>
             </div>
             <div className="relative flex items-center rounded-xl overflow-hidden border border-border/60 bg-background focus-within:ring-2 focus-within:ring-red-500/20 focus-within:border-red-500 transition-all">
               <UserRound className="absolute left-4 size-4 text-muted-foreground/50 pointer-events-none" />
               <Input
                 {...register("name")}
-                placeholder="Your full name"
+                placeholder={t("sos.namePlaceholder")}
                 className="w-full h-12 pl-11 pr-4 border-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-sm shadow-none rounded-none"
               />
             </div>
@@ -391,10 +396,10 @@ export default function SOSForm() {
           <div className="flex flex-col gap-5 p-6 rounded-3xl border border-border/60 bg-muted/5">
             <div className="flex flex-col gap-1">
               <h3 className="text-base font-black uppercase">
-                Phone Number
+                {t("sos.phone")}
               </h3>
               <p className="text-xs text-muted-foreground">
-                A working phone number so the rescue team can call you
+                {t("sos.phoneHint")}
               </p>
             </div>
 
@@ -422,10 +427,10 @@ export default function SOSForm() {
           <div className="flex flex-col gap-5 p-6 rounded-3xl border border-border/60 bg-muted/5">
             <div className="flex flex-col gap-1">
               <h3 className="text-base font-black uppercase">
-                Add Photos (Optional)
+                {t("sos.photos")}
               </h3>
               <p className="text-xs text-muted-foreground">
-                Photos of the water or your location help rescuers. You can add several.
+                {t("sos.photosHint")}
               </p>
             </div>
 
@@ -475,7 +480,7 @@ export default function SOSForm() {
                   </div>
                 )}
                 <span className="text-[10px] font-bold text-muted-foreground">
-                  {photoPreviews.length > 0 ? "Add more" : "Add photo"}
+                  {photoPreviews.length > 0 ? t("sos.addMore") : t("sos.addPhoto")}
                 </span>
               </button>
             </div>

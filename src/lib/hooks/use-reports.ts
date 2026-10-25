@@ -1,7 +1,8 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { api } from "@/lib/api-client";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { api, ApiError } from "@/lib/api-client";
 import type { DashboardStats, ReliefSummary, SosSummary } from "@/lib/types/api";
 
 export function useDashboardStats() {
@@ -19,16 +20,24 @@ export function useSosSummary() {
   });
 }
 
-export function useReliefSummary() {
+/** Distribution-log totals (not to be confused with use-relief's inventory summary). */
+export function useReportsReliefSummary() {
   return useQuery({
     queryKey: ["reports", "relief-summary"],
     queryFn: () => api.get<ReliefSummary>("/reports/relief-summary"),
   });
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
+const EXPORTS = {
+  csv: { path: "/reports/export/csv", filename: "sos-requests.csv" },
+  pdf: { path: "/reports/export/pdf", filename: "floodaid-report.pdf" },
+} as const;
 
-export const reportExportUrls = {
-  csv: `${API_URL}/reports/export/csv`,
-  pdf: `${API_URL}/reports/export/pdf`,
-};
+export function useDownloadReport() {
+  return useMutation({
+    mutationFn: (kind: keyof typeof EXPORTS) =>
+      api.download(EXPORTS[kind].path, EXPORTS[kind].filename),
+    onError: (error) =>
+      toast.error(error instanceof ApiError ? error.message : "Download failed"),
+  });
+}

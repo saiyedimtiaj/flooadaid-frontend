@@ -10,8 +10,10 @@ import {
   Compass,
 } from "lucide-react";
 import { motion, Variants } from "framer-motion";
+import { useT } from "@/lib/i18n/use-t";
 
 export default function SOSHeader() {
+  const { t } = useT();
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
@@ -62,7 +64,7 @@ export default function SOSHeader() {
               href="/"
               className="text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors duration-250"
             >
-              Home
+              {t("nav.home")}
             </Link>
             <ChevronRight className="size-3 text-muted-foreground/60" />
             <span className="text-xs font-bold text-destructive">SOS Desk</span>
@@ -94,17 +96,12 @@ export default function SOSHeader() {
                   National Response Grid
                 </div>
                 <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-foreground tracking-tight leading-none">
-                  Emergency Help Request
+                  {t("sos.badge")}
                 </h1>
               </div>
             </div>
 
-            <p className="text-base text-muted-foreground max-w-3xl leading-relaxed mt-2">
-              Broadcast your real-time coordinates and core situational details
-              securely. Once broadcasted, our live dashboard matches your
-              emergency directly with local volunteer cells, community boats,
-              and nearby medical personnel.
-            </p>
+            <p className="text-base text-muted-foreground max-w-3xl leading-relaxed mt-2">{t("sos.headerBody")}</p>
           </motion.div>
 
           <motion.div variants={itemVariants} className="lg:col-span-4 w-full">

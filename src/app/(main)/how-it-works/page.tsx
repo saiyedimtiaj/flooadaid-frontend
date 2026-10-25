@@ -214,12 +214,10 @@ export default function HowItWorksPage() {
           </Accordion>
 
           <div className="mt-12 text-center">
-            <Button size="xl" className="font-bold gap-2">
-              <Link href="/sos" className="flex items-center gap-2">
+            <Button size="xl" className="font-bold gap-2" nativeButton={false} render={<Link href="/sos" className="flex items-center gap-2" />}>
                 <Siren className="h-5 w-5" />
                 Get Help Now
-              </Link>
-            </Button>
+              </Button>
           </div>
         </div>
       </section>

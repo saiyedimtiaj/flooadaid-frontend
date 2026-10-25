@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useCurrentUser } from "@/lib/hooks/use-current-user";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "./dashboard-sidebar";
 import { DashboardTopbar } from "./dashboard-topbar";
-import { ROLE_HOME } from "./nav-config";
+import { ROLE_HOME, VOLUNTEER_ONBOARDING_PATHS } from "./nav-config";
 import type { Role } from "@/lib/types/auth";
 
 function LoadingScreen() {
@@ -28,8 +28,15 @@ export function DashboardShell({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const { data: user, isLoading } = useCurrentUser();
-  const allowed = !!user && allowedRoles.includes(user.role);
+  // A USER inside the volunteer area is mid-signup: only the onboarding
+  // pages, with their own (USER) sidebar rather than volunteer tools.
+  const isOnboarding = navRole === "VOLUNTEER" && user?.role === "USER";
+  const allowed =
+    !!user &&
+    allowedRoles.includes(user.role) &&
+    (!isOnboarding || VOLUNTEER_ONBOARDING_PATHS.includes(pathname));
 
   useEffect(() => {
     if (isLoading) return;
@@ -38,9 +45,9 @@ export function DashboardShell({
       return;
     }
     if (!allowed) {
-      router.replace(ROLE_HOME[user.role]);
+      router.replace(isOnboarding ? "/volunteer/profile" : ROLE_HOME[user.role]);
     }
-  }, [isLoading, user, allowed, router]);
+  }, [isLoading, user, allowed, isOnboarding, router]);
 
   if (isLoading || !user || !allowed) {
     return <LoadingScreen />;
@@ -48,7 +55,7 @@ export function DashboardShell({
 
   return (
     <SidebarProvider>
-      <DashboardSidebar role={navRole} />
+      <DashboardSidebar role={isOnboarding ? "USER" : navRole} />
       <SidebarInset className="min-w-0">
         <DashboardTopbar user={user} />
         <div className="flex-1 min-w-0 max-w-full p-4">{children}</div>

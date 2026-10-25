@@ -272,7 +272,8 @@
   }
 
   body {
-    font-family: var(--font-sans);
+    /* Bengali glyphs aren't in Plus Jakarta Sans; fall back to Noto Sans Bengali. */
+    font-family: var(--font-sans), var(--font-bengali), ui-sans-serif, system-ui, sans-serif;
     @apply bg-background text-foreground;
   }
 

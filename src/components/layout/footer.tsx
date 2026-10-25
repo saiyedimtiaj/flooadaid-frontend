@@ -1,28 +1,33 @@
+"use client";
+
 import Link from "next/link";
-import { Waves, ChevronRight, Mail, Phone, ExternalLink } from "lucide-react";
+import { Waves, ChevronRight, Phone, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useT, type MessageKey } from "@/lib/i18n/use-t";
 
 interface FooterLink {
   href: string;
-  label: string;
+  label: MessageKey;
   isExternal?: boolean;
 }
 
 const platformLinks: FooterLink[] = [
-  { href: "/alerts", label: "Flood Alerts" },
-  { href: "/shelters", label: "Shelter Finder" },
-  { href: "/sos", label: "Emergency SOS" },
-  { href: "/tracker", label: "Relief Tracker" },
-  { href: "/get-involved", label: "Volunteer Hub" },
+  { href: "/alerts", label: "footer.alerts" },
+  { href: "/shelters", label: "footer.shelters" },
+  { href: "/sos", label: "footer.sos" },
+  { href: "/tracker", label: "footer.tracker" },
+  { href: "/missing-persons", label: "footer.missing" },
+  { href: "/get-involved", label: "footer.volunteer" },
 ];
 
 const resourceLinks: FooterLink[] = [
-  { href: "/how-it-works", label: "How It Works" },
-  { href: "/safety", label: "Safety Guidelines" },
-  { href: "/report", label: "Report an Issue" },
+  { href: "/how-it-works", label: "footer.howItWorks" },
+  { href: "/safety", label: "footer.safety" },
+  { href: "/report", label: "footer.report" },
 ];
 
 export function Footer() {
+  const { t, num } = useT();
   return (
     <footer className="relative overflow-hidden bg-foreground text-background/85 pt-12 md:pt-16 pb-8 border-t border-transparent">
       <div
@@ -58,20 +63,19 @@ export function Footer() {
             </Link>
 
             <p className="mt-4 text-sm text-background/65 leading-relaxed max-w-sm md:max-w-xs">
-              Protecting lives through real-time flood information, shelter
-              access, and emergency coordination across Bangladesh.
+              {t("footer.tagline")}
             </p>
 
             <div className="mt-6 flex items-center gap-4 text-background/55">
               <span className="text-xs text-background/50 font-medium ml-1 select-none">
-                Made with ❤️ for Bangladesh
+                {t("footer.madeWith")}
               </span>
             </div>
           </div>
 
           <div className="flex flex-col items-center md:items-start">
             <h3 className="text-xs font-semibold uppercase tracking-widest text-background/55 mb-4">
-              Platform
+              {t("footer.platform")}
             </h3>
             <ul className="w-full space-y-2.5">
               {platformLinks.map((link) => (
@@ -83,7 +87,7 @@ export function Footer() {
                     href={link.href}
                     className="group flex items-center gap-1 text-sm text-background/65 hover:text-background transition-all duration-200 hover:translate-x-0.5 focus-visible:outline-2 focus-visible:outline-destructive rounded-sm"
                   >
-                    <span>{link.label}</span>
+                    <span>{t(link.label)}</span>
                     <ChevronRight className="size-3.5 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200 text-destructive" />
                   </Link>
                 </li>
@@ -93,7 +97,7 @@ export function Footer() {
 
           <div className="flex flex-col items-center md:items-start">
             <h3 className="text-xs font-semibold uppercase tracking-widest text-background/55 mb-4">
-              Resources
+              {t("footer.resources")}
             </h3>
             <ul className="w-full space-y-2.5">
               {resourceLinks.map((link) => (
@@ -108,7 +112,7 @@ export function Footer() {
                       rel="noopener noreferrer"
                       className="group flex items-center gap-1.5 text-sm text-background/65 hover:text-background transition-all duration-200 hover:translate-x-0.5 focus-visible:outline-2 focus-visible:outline-destructive rounded-sm"
                     >
-                      <span>{link.label}</span>
+                      <span>{t(link.label)}</span>
                       <ExternalLink className="size-3 opacity-60 group-hover:opacity-100 transition-opacity" />
                     </a>
                   ) : (
@@ -116,7 +120,7 @@ export function Footer() {
                       href={link.href}
                       className="group flex items-center gap-1 text-sm text-background/65 hover:text-background transition-all duration-200 hover:translate-x-0.5 focus-visible:outline-2 focus-visible:outline-destructive rounded-sm"
                     >
-                      <span>{link.label}</span>
+                      <span>{t(link.label)}</span>
                       <ChevronRight className="size-3.5 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200 text-destructive" />
                     </Link>
                   )}
@@ -127,22 +131,22 @@ export function Footer() {
 
           <div className="flex flex-col items-center md:items-start w-full">
             <h3 className="text-xs font-semibold uppercase tracking-widest text-warning mb-4">
-              Emergency
+              {t("footer.emergency")}
             </h3>
 
             <div className="space-y-2 mb-5 w-full">
               <div className="flex items-center justify-center md:justify-start gap-2.5 text-background">
                 <Phone className="size-4 text-destructive shrink-0" />
-                <span className="text-sm font-medium">National Help:</span>
+                <span className="text-sm font-medium">{t("footer.nationalHelp")}</span>
                 <span className="text-base font-bold text-destructive">
-                  999
+                  {num("999")}
                 </span>
               </div>
               <div className="flex items-center justify-center md:justify-start gap-2.5 text-background">
                 <Phone className="size-4 text-destructive shrink-0" />
-                <span className="text-sm font-medium">FFWC Hotline:</span>
+                <span className="text-sm font-medium">{t("footer.ffwc")}</span>
                 <span className="text-base font-bold text-destructive">
-                  10941
+                  {num("10941")}
                 </span>
               </div>
             </div>
@@ -150,13 +154,10 @@ export function Footer() {
             <Button
               variant="destructive-outline"
               size="sm"
-              className="w-full justify-center rounded-xl"
-            >
-              <Link href="/sos">Get Help Now</Link>
-            </Button>
+              className="w-full justify-center rounded-xl" nativeButton={false} render={<Link href="/sos" />}>{t("nav.getHelp")}</Button>
 
             <p className="mt-3 text-[11px] text-background/50 font-medium">
-              Available 24/7 across Bangladesh
+              {t("footer.available")}
             </p>
           </div>
         </div>
@@ -177,7 +178,7 @@ export function Footer() {
                 href="/privacy"
                 className="hover:text-background transition-colors focus-visible:outline-2 focus-visible:outline-destructive rounded-xs"
               >
-                Privacy Policy
+                {t("footer.privacy")}
               </Link>
               <span className="text-background/30 select-none font-bold">
                 &middot;
@@ -186,7 +187,7 @@ export function Footer() {
                 href="/terms"
                 className="hover:text-background transition-colors focus-visible:outline-2 focus-visible:outline-destructive rounded-xs"
               >
-                Terms of Use
+                {t("footer.terms")}
               </Link>
             </div>
           </div>

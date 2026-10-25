@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { useForm, FormProvider } from "react-hook-form";
+import { useForm, useWatch, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import SOSHeader from "./sos-header";
@@ -15,6 +15,7 @@ import { sosFormSchema, SOSFormData } from "./types";
 import { useCreateSos, useSosTracking } from "@/lib/hooks/use-sos";
 import { ApiError } from "@/lib/api-client";
 import type { HelpType } from "@/lib/types/api";
+import { useT } from "@/lib/i18n/use-t";
 
 const LAST_SOS_ID_KEY = "floodaid:last-sos-id";
 
@@ -40,19 +41,20 @@ export default function SOSContent() {
   const [hasSubmitted, setHasSubmitted] = useState(false);
 
   const createSos = useCreateSos();
+  const { t } = useT();
   const { data: trackedSos, isLoading: isTrackingLoading } = useSosTracking(generatedSosId);
 
-  const formValues = form.watch();
+  const formValues = useWatch({ control: form.control }) as SOSFormData;
 
   const getMissingRequirements = () => {
     const missing: string[] = [];
-    if (formValues.name.trim().length < 2) missing.push("Your name");
-    if (formValues.districtId === null) missing.push("Your district");
-    if (location === null) missing.push("Your location on the map");
-    if (formValues.peopleCount === null) missing.push("How many people");
-    if (formValues.helpTypes.length === 0) missing.push("What help you need");
+    if (formValues.name.trim().length < 2) missing.push(t("sos.missing.name"));
+    if (formValues.districtId === null) missing.push(t("sos.missing.district"));
+    if (location === null) missing.push(t("sos.missing.location"));
+    if (formValues.peopleCount === null) missing.push(t("sos.missing.people"));
+    if (formValues.helpTypes.length === 0) missing.push(t("sos.missing.help"));
     if (!/^01\d{9}$/.test(formValues.phone)) {
-      missing.push("A valid phone number");
+      missing.push(t("sos.missing.phone"));
     }
     return missing;
   };
@@ -71,7 +73,6 @@ export default function SOSContent() {
         peopleCount: values.peopleCount!,
         helpType: values.helpTypes.map((t) => t.toLowerCase()) as HelpType[],
         description: values.description || undefined,
-        photoUrl: values.photoUrls[0] ?? undefined,
         photoUrls: values.photoUrls.length > 0 ? values.photoUrls : undefined,
       });
 
@@ -96,8 +97,8 @@ export default function SOSContent() {
     e?.preventDefault();
     const missing = getMissingRequirements();
     if (missing.length > 0) {
-      toast.error("Please complete your SOS", {
-        description: `Still needed: ${missing.join(", ")}.`,
+      toast.error(t("sos.incomplete"), {
+        description: `${t("sos.stillNeeded")} ${missing.join(", ")}.`,
       });
       // trigger RHF validation so field-level focus works, but no eager inline text
       void form.trigger();

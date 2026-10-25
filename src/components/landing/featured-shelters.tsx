@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useShelters } from "@/lib/hooks/use-shelters";
 import type { Shelter } from "@/lib/types/api";
+import { useT } from "@/lib/i18n/use-t";
 
 const facilityMeta = [
   { key: "hasFood" as const, icon: UtensilsCrossed, label: "Food" },
@@ -76,6 +77,7 @@ function statusThemeFor(occupancyRate: number) {
 }
 
 function ShelterCard({ shelter }: { shelter: Shelter }) {
+  const { pick } = useT();
   const occupancyRate = Math.round((shelter.currentOccupancy / shelter.capacity) * 100);
   const status = statusThemeFor(occupancyRate);
   const dashOffset = RING_CIRCUMFERENCE * (1 - occupancyRate / 100);
@@ -99,7 +101,7 @@ function ShelterCard({ shelter }: { shelter: Shelter }) {
         </span>
 
         <h3 className="relative text-base font-bold text-foreground leading-snug mt-3 pr-14">
-          {shelter.name}
+          {pick(shelter.name, shelter.nameBn)}
         </h3>
         <div className="relative flex items-center gap-1 text-muted-foreground mt-1">
           <MapPin className="h-3 w-3 shrink-0" />
@@ -163,25 +165,20 @@ function ShelterCard({ shelter }: { shelter: Shelter }) {
         </div>
 
         <div className="flex items-center gap-2 mt-auto">
-          <Button className="flex-1">
-            <a
+          <Button className="flex-1" nativeButton={false} render={<a
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(shelter.name + ", " + location)}`}
               target="_blank"
               rel="noreferrer"
-              className="flex items-center justify-center gap-1.5"
-            >
+              className="flex items-center justify-center gap-1.5" />}>
               <Navigation className="h-3.5 w-3.5 shrink-0" />
               Directions
-            </a>
-          </Button>
+            </Button>
 
           {shelter.contactPhone && (
-            <Button variant="outline" className="flex-1">
-              <a href={`tel:${shelter.contactPhone}`} className="flex items-center justify-center gap-1.5">
+            <Button variant="outline" className="flex-1" nativeButton={false} render={<a href={`tel:${shelter.contactPhone}`} className="flex items-center justify-center gap-1.5" />}>
                 <Phone className="h-3.5 w-3.5 shrink-0" />
                 Call
-              </a>
-            </Button>
+              </Button>
           )}
         </div>
       </div>
@@ -207,12 +204,10 @@ export default function FeaturedShelters() {
           </div>
 
           <div className="hidden md:block shrink-0">
-            <Button variant="outline">
-              <Link href="/shelters" className="flex items-center gap-1.5">
+            <Button variant="outline" nativeButton={false} render={<Link href="/shelters" className="flex items-center gap-1.5" />}>
                 View All Shelters
                 <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
+              </Button>
           </div>
         </div>
 
@@ -242,12 +237,10 @@ export default function FeaturedShelters() {
         )}
 
         <div className="block md:hidden w-full">
-          <Button variant="outline" size="lg" className="w-full font-bold">
-            <Link href="/shelters" className="flex items-center justify-center gap-1.5">
+          <Button variant="outline" size="lg" className="w-full font-bold" nativeButton={false} render={<Link href="/shelters" className="flex items-center justify-center gap-1.5" />}>
               View All Shelters
               <ArrowRight className="h-4 w-4" />
-            </Link>
-          </Button>
+            </Button>
         </div>
       </div>
     </section>

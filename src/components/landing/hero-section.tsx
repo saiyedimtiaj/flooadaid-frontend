@@ -13,9 +13,8 @@ import {
   Variants,
 } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { useAlerts } from "@/lib/hooks/use-alerts";
-import { useShelters } from "@/lib/hooks/use-shelters";
-import { usePublicSosStats } from "@/lib/hooks/use-sos";
+import { usePublicSummary } from "@/lib/hooks/use-stats";
+import { useT } from "@/lib/i18n/use-t";
 
 interface MetricItem {
   id: string;
@@ -48,18 +47,15 @@ function AnimatedNumber({ value }: { value: number }) {
 export function HeroSection() {
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const { data: activeAlerts } = useAlerts({ limit: 100, isActive: true });
-  const { data: shelters } = useShelters({ limit: 100 });
-  const { data: sosStats } = usePublicSosStats();
-
-  const peopleSheltered = shelters?.data.reduce((sum, s) => sum + s.currentOccupancy, 0) ?? 0;
-  const districtsAffected = new Set(activeAlerts?.data.map((a) => a.districtId)).size;
+  // Exact server-side totals (the old version summed a 100-row page client-side).
+  const { data: summary } = usePublicSummary();
+  const { t } = useT();
 
   const metricsData: MetricItem[] = [
-    { id: "sheltered", target: peopleSheltered, suffix: "", label: "People Sheltered" },
-    { id: "shelters", target: shelters?.meta.total ?? 0, suffix: "", label: "Shelters Active" },
-    { id: "districts", target: districtsAffected, suffix: "", label: "Districts Affected" },
-    { id: "rescues", target: sosStats?.resolved ?? 0, suffix: "", label: "Rescues Completed" },
+    { id: "sheltered", target: summary?.peopleSheltered ?? 0, suffix: "", label: t("hero.sheltered") },
+    { id: "shelters", target: summary?.sheltersOpen ?? 0, suffix: "", label: t("hero.shelters") },
+    { id: "districts", target: summary?.districtsOnAlert ?? 0, suffix: "", label: t("hero.districts") },
+    { id: "rescues", target: summary?.sosResolved ?? 0, suffix: "", label: t("hero.rescues") },
   ];
 
   const fadeInUpVariants: Variants = {
@@ -126,7 +122,7 @@ export function HeroSection() {
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
             <span className="text-[11px] font-semibold uppercase tracking-wider text-white">
-              Live Monitoring Active
+              {t("hero.live")}
             </span>
           </motion.div>
           <motion.h1
@@ -136,7 +132,7 @@ export function HeroSection() {
             custom={0.4}
             className="mt-6 text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-white leading-[1.1] text-balance"
           >
-            Saving Lives When the Waters Rise
+            {t("hero.title")}
           </motion.h1>
 
           <motion.p
@@ -146,7 +142,7 @@ export function HeroSection() {
             custom={0.5}
             className="mt-4 text-lg md:text-xl font-medium text-destructive drop-shadow-md"
           >
-            Real-time flood intelligence for Bangladesh
+            {t("hero.subtitle")}
           </motion.p>
           <motion.p
             variants={fadeInUpVariants}
@@ -154,11 +150,7 @@ export function HeroSection() {
             animate="visible"
             custom={0.6}
             className="mt-4 text-base md:text-lg text-white/70 max-w-2xl leading-relaxed"
-          >
-            Track real-time flood alerts, locate open emergency shelters,
-            dispatch urgent SOS rescue requests, and coordinate volunteer relief
-            distribution—all within a platform engineered for resilience.
-          </motion.p>
+          >{t("hero.body")}</motion.p>
           <motion.div
             variants={fadeInUpVariants}
             initial="hidden"
@@ -168,35 +160,26 @@ export function HeroSection() {
           >
             <Button
               className="w-full sm:w-auto h-12 md:h-13 px-6 rounded-xl bg-white text-slate-950 font-semibold transition-all duration-200 group inline-flex items-center justify-center gap-2"
-              variant={"ghost"}
-            >
-              <Link href="/shelters" className="inline-flex items-center gap-2">
+              variant={"ghost"} nativeButton={false} render={<Link href="/shelters" className="inline-flex items-center gap-2" />}>
                 <MapPin className="size-4 shrink-0 text-slate-950" />
-                <span>Find Nearest Shelter</span>
-              </Link>
-            </Button>
+                <span>{t("hero.findShelter")}</span>
+              </Button>
 
             <Button
               variant="destructive"
               size="lg"
-              className="w-full sm:w-auto h-12 md:h-13 px-6 rounded-xl bg-destructive hover:bg-destructive/90 text-destructive-foreground font-semibold transition-all duration-200 shadow-lg shadow-destructive/25 inline-flex items-center justify-center gap-2"
-            >
-              <Link href="/sos" className="inline-flex items-center gap-2">
+              className="w-full sm:w-auto h-12 md:h-13 px-6 rounded-xl bg-destructive hover:bg-destructive/90 text-destructive-foreground font-semibold transition-all duration-200 shadow-lg shadow-destructive/25 inline-flex items-center justify-center gap-2" nativeButton={false} render={<Link href="/sos" className="inline-flex items-center gap-2" />}>
                 <Siren className="size-4 shrink-0 animate-pulse" />
-                <span>Emergency SOS</span>
-              </Link>
-            </Button>
+                <span>{t("hero.sos")}</span>
+              </Button>
 
             <Button
               variant="ghost"
               size="lg"
-              className="w-full sm:w-auto h-12 md:h-13 px-5 rounded-xl bg-white/5 hover:bg-white/10 text-white hover:text-white border border-white/10 backdrop-blur-xs font-semibold transition-all duration-200 group inline-flex items-center justify-center gap-1.5"
-            >
-              <Link href="/alerts" className="inline-flex items-center gap-2">
-                <span>View Live Map</span>
+              className="w-full sm:w-auto h-12 md:h-13 px-5 rounded-xl bg-white/5 hover:bg-white/10 text-white hover:text-white border border-white/10 backdrop-blur-xs font-semibold transition-all duration-200 group inline-flex items-center justify-center gap-1.5" nativeButton={false} render={<Link href="/alerts" className="inline-flex items-center gap-2" />}>
+                <span>{t("hero.liveMap")}</span>
                 <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-1" />
-              </Link>
-            </Button>
+              </Button>
           </motion.div>
 
           <motion.div
@@ -240,7 +223,7 @@ export function HeroSection() {
         aria-hidden="true"
       >
         <span className="text-[9px] uppercase font-bold tracking-widest text-white/80">
-          Scroll to Explore
+          {t("hero.scroll")}
         </span>
         <ChevronDown className="size-4 text-white animate-bounce" />
       </div>

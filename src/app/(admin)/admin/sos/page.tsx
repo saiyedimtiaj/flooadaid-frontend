@@ -26,7 +26,7 @@ import { PageHeader } from "@/components/dashboard/page-header";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { SosStatusBadge, SosPriorityBadge } from "@/components/dashboard/sos-status-badge";
 import { useAssignSos, useSosRequests, useUpdateSosStatus } from "@/lib/hooks/use-sos";
-import { useAllUsers } from "@/lib/hooks/use-users";
+import { useAssignableVolunteers } from "@/lib/hooks/use-volunteers";
 import type { SosStatus, SosRequest } from "@/lib/types/api";
 import { cn } from "@/lib/utils";
 
@@ -65,8 +65,8 @@ export default function AdminSosPage() {
 
   // Fetch the full queue once; filter/count client-side so tabs can show counts.
   const { data, isLoading } = useSosRequests({ limit: 100 });
-  const { data: users } = useAllUsers();
-  const volunteers = users?.filter((u) => u.role === "VOLUNTEER") ?? [];
+  // Only verified, available volunteers can be assigned (the API enforces this too).
+  const { options: volunteers } = useAssignableVolunteers();
   const updateStatus = useUpdateSosStatus();
   const assignSos = useAssignSos();
 
@@ -304,11 +304,18 @@ function SosRow({
                 <SelectTrigger className="w-full rounded-lg">
                   <SelectValue placeholder="Assign volunteer...">
                     {(value: string) =>
-                      volunteers.find((v) => v.id === value)?.name || "Assign volunteer..."
+                      volunteers.find((v) => v.id === value)?.name ||
+                      sos.assignedTo?.name ||
+                      "Assign volunteer..."
                     }
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
+                  {volunteers.length === 0 && (
+                    <p className="px-3 py-2 text-xs text-muted-foreground">
+                      No verified volunteers are available right now.
+                    </p>
+                  )}
                   {volunteers.map((v) => (
                     <SelectItem key={v.id} value={v.id}>
                       {v.name}
