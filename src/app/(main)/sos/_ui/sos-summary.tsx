@@ -5,10 +5,10 @@ import { useT } from "@/lib/i18n/use-t";
 import { cn } from "@/lib/utils";
 
 export const EMERGENCY_NUMBERS = [
-  { service: "National Emergency", number: "999" },
-  { service: "Flood Warning (FFWC)", number: "10941" },
-  { service: "Fire & Rescue", number: "199" },
-  { service: "Health (DGHS)", number: "16263" },
+  { service: "National Emergency", serviceBn: "জাতীয় জরুরি সেবা", number: "999" },
+  { service: "Flood Warning (FFWC)", serviceBn: "বন্যা সতর্কতা (FFWC)", number: "10941" },
+  { service: "Fire & Rescue", serviceBn: "ফায়ার সার্ভিস ও উদ্ধার", number: "199" },
+  { service: "Health (DGHS)", serviceBn: "স্বাস্থ্যসেবা (DGHS)", number: "16263" },
 ];
 
 export interface ChecklistItem {
@@ -52,7 +52,7 @@ export function SOSSummary({
   onSubmit: () => void;
   isSubmitting: boolean;
 }) {
-  const { t } = useT();
+  const { t, num } = useT();
   const done = items.filter((i) => i.done).length;
   const pct = Math.round((done / items.length) * 100);
 
@@ -61,9 +61,9 @@ export function SOSSummary({
       <div className="bg-primary px-5 py-5 text-primary-foreground">
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/60">{t("sos.checklist")}</p>
         <div className="mt-2 flex items-end justify-between">
-          <p className="text-3xl font-bold tabular-nums">{pct}%</p>
+          <p className="text-3xl font-bold tabular-nums">{num(pct)}%</p>
           <p className="text-sm text-white/70">
-            {done} / {items.length} {t("sos.progressDone")}
+            {num(done)} / {num(items.length)} {t("sos.progressDone")}
           </p>
         </div>
         <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/15">
@@ -97,7 +97,7 @@ export function SOSSummary({
 }
 
 export function EmergencyNumbers() {
-  const { t } = useT();
+  const { t, tr, num } = useT();
   return (
     <section className="rounded-3xl border border-border bg-card p-5">
       <h2 className="font-bold text-foreground">{t("sos.emergencyNumbers")}</h2>
@@ -110,9 +110,9 @@ export function EmergencyNumbers() {
           >
             <span className="inline-flex items-center gap-1.5 font-mono text-lg font-bold text-destructive">
               <Phone className="h-4 w-4" />
-              {n.number}
+              {num(n.number)}
             </span>
-            <span className="mt-0.5 text-xs text-muted-foreground">{n.service}</span>
+            <span className="mt-0.5 text-xs text-muted-foreground">{tr(n.service, n.serviceBn)}</span>
           </a>
         ))}
       </div>

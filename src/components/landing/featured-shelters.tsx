@@ -21,11 +21,11 @@ import type { Shelter } from "@/lib/types/api";
 import { useT } from "@/lib/i18n/use-t";
 
 const facilityMeta = [
-  { key: "hasFood" as const, icon: UtensilsCrossed, label: "Food" },
-  { key: "hasWater" as const, icon: Droplets, label: "Water" },
-  { key: "hasMedical" as const, icon: Plus, label: "Medical" },
-  { key: "hasElectricity" as const, icon: Zap, label: "Power" },
-  { key: "hasToilet" as const, icon: Bath, label: "Toilet" },
+  { key: "hasFood" as const, icon: UtensilsCrossed, label: "Food", labelBn: "খাবার" },
+  { key: "hasWater" as const, icon: Droplets, label: "Water", labelBn: "পানি" },
+  { key: "hasMedical" as const, icon: Plus, label: "Medical", labelBn: "চিকিৎসা" },
+  { key: "hasElectricity" as const, icon: Zap, label: "Power", labelBn: "বিদ্যুৎ" },
+  { key: "hasToilet" as const, icon: Bath, label: "Toilet", labelBn: "শৌচাগার" },
 ];
 
 const RING_RADIUS = 30;
@@ -49,6 +49,7 @@ function statusThemeFor(occupancyRate: number) {
   if (occupancyRate >= 80) {
     return {
       label: "Near Capacity",
+      labelBn: "প্রায় পূর্ণ",
       tint: "bg-linear-to-br from-[oklch(0.64_0.22_22)] to-[oklch(0.5_0.21_10)]",
       text: "text-destructive",
       ring: "stroke-destructive",
@@ -59,6 +60,7 @@ function statusThemeFor(occupancyRate: number) {
   if (occupancyRate >= 50) {
     return {
       label: "Filling Fast",
+      labelBn: "দ্রুত পূর্ণ হচ্ছে",
       tint: "bg-linear-to-br from-[oklch(0.8_0.16_72)] to-[oklch(0.66_0.19_45)]",
       text: "text-amber-600 dark:text-amber-500",
       ring: "stroke-amber-500",
@@ -68,6 +70,7 @@ function statusThemeFor(occupancyRate: number) {
   }
   return {
     label: "Open",
+    labelBn: "খোলা",
     tint: "bg-linear-to-br from-[oklch(0.7_0.15_165)] to-[oklch(0.52_0.12_190)]",
     text: "text-emerald-600 dark:text-emerald-500",
     ring: "stroke-emerald-500",
@@ -77,11 +80,11 @@ function statusThemeFor(occupancyRate: number) {
 }
 
 function ShelterCard({ shelter }: { shelter: Shelter }) {
-  const { pick } = useT();
+  const { pick, tr, num } = useT();
   const occupancyRate = Math.round((shelter.currentOccupancy / shelter.capacity) * 100);
   const status = statusThemeFor(occupancyRate);
   const dashOffset = RING_CIRCUMFERENCE * (1 - occupancyRate / 100);
-  const location = `${shelter.address}, ${shelter.district.nameEn}`;
+  const location = `${shelter.address}, ${pick(shelter.district.nameEn, shelter.district.nameBn)}`;
 
   return (
     <motion.div
@@ -98,7 +101,7 @@ function ShelterCard({ shelter }: { shelter: Shelter }) {
           className="relative inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider text-white bg-white/20 ring-1 ring-white/30 backdrop-blur-xs"
         >
           <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
-          {status.label}
+          {tr(status.label, status.labelBn)}
         </span>
 
         <h3 className="relative text-lg font-extrabold text-white leading-snug mt-3 pr-14">
@@ -131,23 +134,25 @@ function ShelterCard({ shelter }: { shelter: Shelter }) {
               />
             </svg>
             <span className="absolute inset-0 flex items-center justify-center text-xs font-extrabold text-foreground tabular-nums">
-              {occupancyRate}%
+              {num(occupancyRate)}%
             </span>
           </div>
           <div className="flex flex-col gap-0.5">
             <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-              Capacity
+              {tr("Capacity", "ধারণক্ষমতা")}
             </span>
             <span className="text-lg font-extrabold text-foreground tabular-nums leading-none">
-              {shelter.currentOccupancy}
-              <span className="text-sm font-semibold text-muted-foreground"> / {shelter.capacity}</span>
+              {num(shelter.currentOccupancy)}
+              <span className="text-sm font-semibold text-muted-foreground"> / {num(shelter.capacity)}</span>
             </span>
-            <span className="text-[11px] text-muted-foreground mt-0.5">people currently sheltered</span>
+            <span className="text-[11px] text-muted-foreground mt-0.5">
+              {tr("people currently sheltered", "জন বর্তমানে আশ্রয়ে আছেন")}
+            </span>
           </div>
         </div>
 
         <div className="flex flex-wrap gap-1.5">
-          {facilityMeta.map(({ key, icon: Icon, label }) => {
+          {facilityMeta.map(({ key, icon: Icon, label, labelBn }) => {
             const available = shelter[key];
             return (
               <span
@@ -159,7 +164,7 @@ function ShelterCard({ shelter }: { shelter: Shelter }) {
                 }`}
               >
                 <Icon className="h-3 w-3 shrink-0" />
-                {label}
+                {tr(label, labelBn)}
               </span>
             );
           })}
@@ -172,13 +177,13 @@ function ShelterCard({ shelter }: { shelter: Shelter }) {
               rel="noreferrer"
               className="flex items-center justify-center gap-1.5" />}>
               <Navigation className="h-3.5 w-3.5 shrink-0" />
-              Directions
+              {tr("Directions", "দিকনির্দেশনা")}
             </Button>
 
           {shelter.contactPhone && (
             <Button variant="outline" className="flex-1" nativeButton={false} render={<a href={`tel:${shelter.contactPhone}`} className="flex items-center justify-center gap-1.5" />}>
                 <Phone className="h-3.5 w-3.5 shrink-0" />
-                Call
+                {tr("Call", "কল করুন")}
               </Button>
           )}
         </div>
@@ -188,6 +193,7 @@ function ShelterCard({ shelter }: { shelter: Shelter }) {
 }
 
 export default function FeaturedShelters() {
+  const { tr } = useT();
   const { data, isLoading } = useShelters({ limit: 3 });
   const shelters = data?.data ?? [];
 
@@ -197,19 +203,22 @@ export default function FeaturedShelters() {
         <div className="flex flex-row items-end justify-between gap-4">
           <div>
             <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-3.5 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-600">
-              Safe places
+              {tr("Safe places", "নিরাপদ স্থান")}
             </span>
             <h2 className="mt-3 text-3xl md:text-4xl font-extrabold tracking-tight text-foreground">
-              Open <span className="text-brand">Shelters</span>
+              {tr("Open", "খোলা")} <span className="text-brand">{tr("Shelters", "আশ্রয়কেন্দ্র")}</span>
             </h2>
             <p className="text-sm md:text-base text-muted-foreground mt-2">
-              Emergency shelters currently accepting people — live capacity
+              {tr(
+                "Emergency shelters currently accepting people — live capacity",
+                "বর্তমানে মানুষ গ্রহণ করছে এমন জরুরি আশ্রয়কেন্দ্র — সরাসরি ধারণক্ষমতার তথ্য",
+              )}
             </p>
           </div>
 
           <div className="hidden md:block shrink-0">
             <Button nativeButton={false} className="rounded-full px-5" render={<Link href="/shelters" className="flex items-center gap-1.5" />}>
-                View All Shelters
+                {tr("View All Shelters", "সব আশ্রয়কেন্দ্র দেখুন")}
                 <ArrowRight className="h-4 w-4" />
               </Button>
           </div>
@@ -236,13 +245,15 @@ export default function FeaturedShelters() {
         ) : (
           <div className="flex flex-col items-center justify-center p-12 text-center rounded-xl border border-dashed border-border bg-muted/10">
             <Home className="h-10 w-10 text-muted-foreground/50" />
-            <p className="text-sm text-muted-foreground mt-3">No shelters open right now.</p>
+            <p className="text-sm text-muted-foreground mt-3">
+              {tr("No shelters open right now.", "এই মুহূর্তে কোনো আশ্রয়কেন্দ্র খোলা নেই।")}
+            </p>
           </div>
         )}
 
         <div className="block md:hidden w-full">
           <Button variant="outline" size="lg" className="w-full font-bold" nativeButton={false} render={<Link href="/shelters" className="flex items-center justify-center gap-1.5" />}>
-              View All Shelters
+              {tr("View All Shelters", "সব আশ্রয়কেন্দ্র দেখুন")}
               <ArrowRight className="h-4 w-4" />
             </Button>
         </div>

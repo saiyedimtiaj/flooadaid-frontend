@@ -7,8 +7,9 @@ import { setLang, useLang, type Lang } from "./language-store";
 const DIGITS_BN = "০১২৩৪৫৬৭৮৯";
 
 /**
- * `t(key)` for UI strings, `pick(en, bn)` for data that carries its own
- * Bangla field (district.nameBn, alert.titleBn …), `num(n)` for digits.
+ * `t(key)` for shared UI strings, `tr(en, bn)` for page-local copy,
+ * `pick(en, bn)` for API data that carries its own Bangla field
+ * (district.nameBn, alert.titleBn …), and `num(n)` for digits.
  */
 export function useT() {
   const lang = useLang();
@@ -24,6 +25,11 @@ export function useT() {
     [lang],
   );
 
+  const tr = useCallback(
+    (english: string, bangla: string) => (lang === "bn" ? bangla : english),
+    [lang],
+  );
+
   const num = useCallback(
     (value: number | string) => {
       const text = typeof value === "number" ? value.toLocaleString("en-US") : value;
@@ -32,7 +38,7 @@ export function useT() {
     [lang],
   );
 
-  return { lang, t, pick, num, setLang: (l: Lang) => setLang(l) };
+  return { lang, t, tr, pick, num, setLang: (l: Lang) => setLang(l) };
 }
 
 export type { Lang, MessageKey };

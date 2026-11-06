@@ -24,6 +24,7 @@ import {
   LocationSearchModal,
   type SelectedLocation,
 } from "@/components/map/location-search-modal";
+import { useT } from "@/lib/i18n/use-t";
 
 interface ShelterFiltersProps {
   searchQuery: string;
@@ -40,11 +41,11 @@ interface ShelterFiltersProps {
 }
 
 const FACILITIES = [
-  { id: "food", label: "Food", icon: UtensilsCrossed },
-  { id: "water", label: "Water", icon: Droplets },
-  { id: "medical", label: "Medical", icon: Cross },
-  { id: "electricity", label: "Power", icon: Zap },
-  { id: "toilet", label: "Toilet", icon: Bath },
+  { id: "food", label: "Food", labelBn: "খাবার", icon: UtensilsCrossed },
+  { id: "water", label: "Water", labelBn: "পানি", icon: Droplets },
+  { id: "medical", label: "Medical", labelBn: "চিকিৎসা", icon: Cross },
+  { id: "electricity", label: "Power", labelBn: "বিদ্যুৎ", icon: Zap },
+  { id: "toilet", label: "Toilet", labelBn: "শৌচাগার", icon: Bath },
 ];
 
 const CAPACITY_MODES = ["all", "available", "full"] as const;
@@ -62,6 +63,7 @@ export default function ShelterFilters({
   locationFilter,
   setLocationFilter,
 }: ShelterFiltersProps) {
+  const { tr, pick, num } = useT();
   const { data: districts } = useDistricts();
   const [locationModalOpen, setLocationModalOpen] = useState(false);
 
@@ -100,7 +102,7 @@ export default function ShelterFilters({
             <SlidersHorizontal className="size-4" />
           </div>
           <span className="text-sm font-bold text-foreground">
-            Find a Safe Shelter
+            {tr("Find a Safe Shelter", "নিরাপদ আশ্রয়কেন্দ্র খুঁজুন")}
           </span>
         </div>
 
@@ -110,7 +112,7 @@ export default function ShelterFilters({
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search shelters by name or location..."
+              placeholder={tr("Search shelters by name or location...", "নাম বা অবস্থান দিয়ে আশ্রয়কেন্দ্র খুঁজুন...")}
               className="pl-10 h-11 rounded-xl text-sm transition-colors focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary"
             />
           </div>
@@ -119,8 +121,8 @@ export default function ShelterFilters({
             icon={<MapPin />}
             value={selectedDistrictId ? String(selectedDistrictId) : "all"}
             onValueChange={(val) => setSelectedDistrictId(!val || val === "all" ? null : Number(val))}
-            options={[{ value: "all", label: "All Districts" }, ...(districts ?? []).map((d) => ({ value: String(d.id), label: d.nameEn, keywords: d.nameBn }))]}
-            searchPlaceholder="Search district…"
+            options={[{ value: "all", label: tr("All Districts", "সব জেলা") }, ...(districts ?? []).map((d) => ({ value: String(d.id), label: pick(d.nameEn, d.nameBn), keywords: `${d.nameEn} ${d.nameBn}` }))]}
+            searchPlaceholder={tr("Search district…", "জেলা খুঁজুন…")}
           />
 
           <Button
@@ -129,8 +131,8 @@ export default function ShelterFilters({
             className="h-11 rounded-xl gap-2 font-semibold shrink-0 shadow-sm"
           >
             <MapPinned className="size-4" />
-            <span className="hidden sm:inline">Find on Map</span>
-            <span className="sm:hidden">Map</span>
+            <span className="hidden sm:inline">{tr("Find on Map", "মানচিত্রে খুঁজুন")}</span>
+            <span className="sm:hidden">{tr("Map", "মানচিত্র")}</span>
           </Button>
         </div>
 
@@ -146,13 +148,13 @@ export default function ShelterFilters({
               <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 pl-3 pr-1.5 py-1.5">
                 <MapPinned className="size-3.5 text-primary shrink-0" />
                 <span className="text-xs font-semibold text-primary truncate max-w-56">
-                  Near: {locationFilter.label?.split(",")[0] ?? "chosen location"}
+                  {tr("Near", "কাছাকাছি")}: {locationFilter.label?.split(",")[0] ?? tr("chosen location", "নির্বাচিত স্থান")}
                 </span>
                 <button
                   type="button"
                   onClick={() => setLocationFilter(null)}
                   className="flex items-center justify-center size-5 rounded-full hover:bg-primary/20 transition-colors"
-                  aria-label="Clear location"
+                  aria-label={tr("Clear location", "অবস্থান মুছুন")}
                 >
                   <X className="size-3 text-primary" />
                 </button>
@@ -179,7 +181,7 @@ export default function ShelterFilters({
                   )}
                 >
                   <Icon className="size-3.5" />
-                  <span>{facility.label}</span>
+                  <span>{tr(facility.label, facility.labelBn)}</span>
                 </motion.button>
               );
             })}
@@ -205,14 +207,18 @@ export default function ShelterFilters({
                       className="absolute inset-0 -z-10 rounded-full bg-linear-to-br from-primary to-[color-mix(in_oklch,var(--primary),black_18%)]"
                     />
                   )}
-                  {mode}
+                  {mode === "all"
+                    ? tr("All", "সব")
+                    : mode === "available"
+                      ? tr("Available", "জায়গা আছে")
+                      : tr("Full", "পূর্ণ")}
                 </button>
               ))}
             </div>
 
             <div className="flex items-center gap-3">
               <div className="text-xs text-muted-foreground whitespace-nowrap flex items-center gap-1">
-                Showing
+                {tr("Showing", "দেখানো হচ্ছে")}
                 <AnimatePresence mode="popLayout">
                   <motion.span
                     key={totalResults}
@@ -222,10 +228,10 @@ export default function ShelterFilters({
                     transition={{ duration: 0.2 }}
                     className="font-semibold text-foreground inline-block"
                   >
-                    {totalResults}
+                    {num(totalResults)}
                   </motion.span>
                 </AnimatePresence>
-                shelters
+                {tr("shelters", "টি আশ্রয়কেন্দ্র")}
               </div>
 
               <AnimatePresence>
@@ -242,7 +248,7 @@ export default function ShelterFilters({
                       className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
                     >
                       <X className="size-3 mr-1" />
-                      Clear all
+                      {tr("Clear all", "সব মুছুন")}
                     </Button>
                   </motion.div>
                 )}
@@ -256,8 +262,11 @@ export default function ShelterFilters({
         open={locationModalOpen}
         onOpenChange={setLocationModalOpen}
         onSelect={setLocationFilter}
-        title="Find shelters near a location"
-        description="Search a place, tap the map, or use your current location to see the nearest shelters."
+        title={tr("Find shelters near a location", "কোনো স্থানের কাছের আশ্রয়কেন্দ্র খুঁজুন")}
+        description={tr(
+          "Search a place, tap the map, or use your current location to see the nearest shelters.",
+          "কাছের আশ্রয়কেন্দ্র দেখতে স্থান খুঁজুন, মানচিত্রে চাপুন অথবা বর্তমান অবস্থান ব্যবহার করুন।",
+        )}
       />
     </motion.div>
   );

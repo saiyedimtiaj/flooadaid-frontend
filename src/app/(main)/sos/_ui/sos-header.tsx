@@ -7,7 +7,7 @@ import { usePublicSummary } from "@/lib/hooks/use-stats";
 import { useT } from "@/lib/i18n/use-t";
 
 export default function SOSHeader() {
-  const { t, num } = useT();
+  const { t, tr, num } = useT();
   const { data } = usePublicSummary();
   const stats = [
     { icon: Users, value: data?.verifiedVolunteers, label: t("sos.hdr.volunteers") },
@@ -27,7 +27,7 @@ export default function SOSHeader() {
         className="container relative mx-auto flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between"
       >
         <div className="max-w-2xl">
-          <nav className="flex items-center gap-1 text-xs font-semibold text-white/60" aria-label="Breadcrumb">
+          <nav className="flex items-center gap-1 text-xs font-semibold text-white/60" aria-label={tr("Breadcrumb", "পৃষ্ঠা নির্দেশনা")}>
             <Link href="/" className="hover:text-white">
               {t("nav.home")}
             </Link>

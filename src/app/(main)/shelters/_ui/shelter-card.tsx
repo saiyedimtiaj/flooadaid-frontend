@@ -35,6 +35,7 @@ function statusThemeFor(occupancyPercent: number) {
       tint: "bg-destructive/8",
       badge: "text-destructive bg-background/80",
       label: "Near Capacity",
+      labelBn: "প্রায় পূর্ণ",
       pulse: true,
     };
   }
@@ -46,6 +47,7 @@ function statusThemeFor(occupancyPercent: number) {
       tint: "bg-amber-500/8",
       badge: "text-amber-600 dark:text-amber-500 bg-background/80",
       label: "Filling Fast",
+      labelBn: "দ্রুত পূর্ণ হচ্ছে",
       pulse: false,
     };
   }
@@ -56,16 +58,17 @@ function statusThemeFor(occupancyPercent: number) {
     tint: "bg-emerald-500/8",
     badge: "text-emerald-600 dark:text-emerald-500 bg-background/80",
     label: "Open",
+    labelBn: "খোলা",
     pulse: false,
   };
 }
 
 const facilityMeta = [
-  { key: "hasFood" as const, label: "Food", icon: UtensilsCrossed },
-  { key: "hasWater" as const, label: "Water", icon: Droplets },
-  { key: "hasMedical" as const, label: "Medical", icon: Cross },
-  { key: "hasElectricity" as const, label: "Power", icon: Zap },
-  { key: "hasToilet" as const, label: "Toilet", icon: ShowerHead },
+  { key: "hasFood" as const, label: "Food", labelBn: "খাবার", icon: UtensilsCrossed },
+  { key: "hasWater" as const, label: "Water", labelBn: "পানি", icon: Droplets },
+  { key: "hasMedical" as const, label: "Medical", labelBn: "চিকিৎসা", icon: Cross },
+  { key: "hasElectricity" as const, label: "Power", labelBn: "বিদ্যুৎ", icon: Zap },
+  { key: "hasToilet" as const, label: "Toilet", labelBn: "শৌচাগার", icon: ShowerHead },
 ];
 
 export default function ShelterCard({
@@ -74,7 +77,7 @@ export default function ShelterCard({
   onSelect,
   index,
 }: ShelterCardProps) {
-  const { pick } = useT();
+  const { tr, pick, num } = useT();
   const occupancyPercent = Math.round(
     (shelter.currentOccupancy / shelter.capacity) * 100,
   );
@@ -138,7 +141,7 @@ export default function ShelterCard({
               ) : (
                 <span className={cn("size-1.5 rounded-full", status.dot)} />
               )}
-              {status.label}
+              {tr(status.label, status.labelBn)}
             </span>
           </div>
 
@@ -161,12 +164,12 @@ export default function ShelterCard({
           <div>
             <div className="flex justify-between items-center text-xs">
               <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                Capacity
+                {tr("Capacity", "ধারণক্ষমতা")}
               </span>
               <span className="font-semibold text-foreground tabular-nums">
-                {shelter.currentOccupancy} / {shelter.capacity}
+                {num(shelter.currentOccupancy)} / {num(shelter.capacity)}
                 <span className="text-muted-foreground font-medium ml-1">
-                  ({occupancyPercent}%)
+                  ({num(occupancyPercent)}%)
                 </span>
               </span>
             </div>
@@ -184,7 +187,7 @@ export default function ShelterCard({
           {allFacilitiesAvailable ? (
             <div className="inline-flex items-center gap-1 self-start px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[10px] font-semibold">
               <CheckCircle className="size-3" />
-              <span>All Facilities Available</span>
+              <span>{tr("All Facilities Available", "সব সুবিধা আছে")}</span>
             </div>
           ) : (
             <div className="flex flex-wrap gap-1.5">
@@ -196,7 +199,7 @@ export default function ShelterCard({
                     className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-muted border border-border text-muted-foreground"
                   >
                     <Icon className={cn("size-3", status.text)} />
-                    <span>{facility.label}</span>
+                    <span>{tr(facility.label, facility.labelBn)}</span>
                   </div>
                 );
               })}
@@ -213,7 +216,7 @@ export default function ShelterCard({
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-1.5" />}>
                 <Navigation className="size-3.5" />
-                Directions
+                {tr("Directions", "দিকনির্দেশনা")}
               </Button>
 
             {shelter.contactPhone && (
@@ -221,7 +224,7 @@ export default function ShelterCard({
                   href={`tel:${shelter.contactPhone}`}
                   className="flex items-center justify-center gap-1.5" />}>
                   <Phone className="size-3.5" />
-                  Call
+                  {tr("Call", "কল করুন")}
                 </Button>
             )}
           </div>

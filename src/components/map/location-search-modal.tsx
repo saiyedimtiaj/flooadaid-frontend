@@ -15,6 +15,7 @@ import { LocationPicker } from "@/components/map/location-picker";
 import { geocodePlace, type GeocodeResult } from "@/lib/geocode";
 import { toast } from "sonner";
 import type { LatLng } from "@/components/map/location-picker-map";
+import { useT } from "@/lib/i18n/use-t";
 
 export interface SelectedLocation extends LatLng {
   label?: string;
@@ -36,6 +37,7 @@ export function LocationSearchModal({
   title = "Find by location",
   description = "Search a place, tap the map, or use your current location.",
 }: LocationSearchModalProps) {
+  const { tr } = useT();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<GeocodeResult[]>([]);
   const [searching, setSearching] = useState(false);
@@ -87,7 +89,7 @@ export function LocationSearchModal({
 
   const confirm = () => {
     if (!picked) {
-      toast.error("Please choose a location first");
+      toast.error(tr("Please choose a location first", "অনুগ্রহ করে আগে একটি অবস্থান বেছে নিন"));
       return;
     }
     onSelect(picked);
@@ -116,7 +118,10 @@ export function LocationSearchModal({
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search a place, e.g. Feni, Banshkhali, Sylhet…"
+              placeholder={tr(
+                "Search a place, e.g. Feni, Banshkhali, Sylhet…",
+                "স্থান খুঁজুন, যেমন ফেনী, বাঁশখালী, সিলেট…",
+              )}
               className="pl-10 h-11 rounded-xl"
             />
             {searching && (
@@ -151,15 +156,15 @@ export function LocationSearchModal({
           <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3 pt-1">
             <p className="text-xs text-muted-foreground flex items-center gap-1.5">
               <Crosshair className="size-3.5" />
-              Tip: tap anywhere on the map to drop a pin.
+              {tr("Tip: tap anywhere on the map to drop a pin.", "পরামর্শ: পিন বসাতে মানচিত্রের যেকোনো স্থানে চাপুন।")}
             </p>
             <div className="flex items-center gap-2">
               <Button variant="outline" onClick={() => handleOpenChange(false)} className="font-semibold">
-                Cancel
+                {tr("Cancel", "বাতিল")}
               </Button>
               <Button onClick={confirm} disabled={!picked} className="gap-2 font-semibold">
                 <Check className="size-4" />
-                Use This Location
+                {tr("Use This Location", "এই অবস্থান ব্যবহার করুন")}
               </Button>
             </div>
           </div>

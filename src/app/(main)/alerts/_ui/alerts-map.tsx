@@ -15,6 +15,7 @@ import { AlertTriangle } from "lucide-react";
 import { ALERT_SEVERITY_STYLES, ALERT_SEVERITIES, BANGLADESH_CENTER } from "@/lib/alert-severity-styles";
 import { timeAgo } from "@/lib/format-time-ago";
 import type { Alert, AlertSeverity } from "@/lib/types/api";
+import { useT } from "@/lib/i18n/use-t";
 
 const SEVERITY_BADGE_CLASS: Record<AlertSeverity, string> = {
   NORMAL: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
@@ -49,6 +50,7 @@ interface AlertsMapProps {
 }
 
 export default function AlertsMap({ alerts, onSelectAlert }: AlertsMapProps) {
+  const { t, tr, pick, num, lang } = useT();
   // Ensure the Leaflet container is created only once, after mount, so its
   // internal panes exist before children (TileLayer) attach — avoids the
   // "Cannot read properties of undefined (reading 'appendChild')" crash on
@@ -68,7 +70,7 @@ export default function AlertsMap({ alerts, onSelectAlert }: AlertsMapProps) {
     return (
       <div className="w-full h-87.5 md:h-180 rounded-xl border border-border bg-muted/20 flex items-center justify-center">
         <span className="text-xs text-muted-foreground font-bold uppercase tracking-widest">
-          Loading map...
+          {tr("Loading map...", "মানচিত্র লোড হচ্ছে...")}
         </span>
       </div>
     );
@@ -107,27 +109,27 @@ export default function AlertsMap({ alerts, onSelectAlert }: AlertsMapProps) {
                       className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide ${SEVERITY_BADGE_CLASS[alert.severity]}`}
                     >
                       <AlertTriangle className="h-2.5 w-2.5" />
-                      {style.label}
+                      {t(`severity.${alert.severity}`)}
                     </span>
                     <span className="text-[10px] text-muted-foreground shrink-0">
-                      {timeAgo(alert.createdAt)}
+                      {timeAgo(alert.createdAt, lang)}
                     </span>
                   </div>
-                  <h4 className="text-xs font-bold text-foreground leading-tight m-0">{alert.title}</h4>
+                  <h4 className="text-xs font-bold text-foreground leading-tight m-0">{pick(alert.title, alert.titleBn)}</h4>
                   <p className="text-[11px] text-muted-foreground m-0">
-                    District: <strong className="text-foreground">{alert.district.nameEn}</strong>
+                    {tr("District", "জেলা")}: <strong className="text-foreground">{pick(alert.district.nameEn, alert.district.nameBn)}</strong>
                   </p>
                   {alert.waterLevelCm !== null && (
                     <p className="text-[11px] text-muted-foreground m-0">
-                      Water:{" "}
-                      <span className="font-mono font-bold text-primary">{alert.waterLevelCm} cm</span>
+                      {tr("Water", "পানি")}:{" "}
+                      <span className="font-mono font-bold text-primary">{num(alert.waterLevelCm)} {tr("cm", "সেমি")}</span>
                     </p>
                   )}
                   <button
                     onClick={() => onSelectAlert(alert)}
                     className="w-full mt-2 text-center text-[11px] bg-primary text-primary-foreground font-bold py-1 px-2 rounded-md transition-colors hover:bg-primary/90"
                   >
-                    View Details
+                    {tr("View Details", "বিস্তারিত দেখুন")}
                   </button>
                 </div>
               </Popup>
@@ -140,7 +142,7 @@ export default function AlertsMap({ alerts, onSelectAlert }: AlertsMapProps) {
 
       <div className="absolute bottom-4 right-4 bg-background/95 backdrop-blur-md p-3.5 rounded-xl border border-border shadow-lg z-400 text-left select-none hidden sm:block">
         <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2.5">
-          Severity Scale
+          {tr("Severity Scale", "বিপদমাত্রার নির্দেশিকা")}
         </h4>
         <div className="space-y-2">
           {ALERT_SEVERITIES.map((severity) => {
@@ -152,7 +154,7 @@ export default function AlertsMap({ alerts, onSelectAlert }: AlertsMapProps) {
                   className="h-2.5 w-2.5 rounded-full shrink-0 ring-2 ring-background"
                   style={{ backgroundColor: color }}
                 />
-                <span className="text-[11px] font-medium text-foreground">{value.label}</span>
+                <span className="text-[11px] font-medium text-foreground">{t(`severity.${severity}`)}</span>
               </div>
             );
           })}

@@ -23,10 +23,10 @@ interface MetricItem {
   label: string;
 }
 
-function AnimatedNumber({ value }: { value: number }) {
+function AnimatedNumber({ value, format }: { value: number; format: (value: number | string) => string }) {
   const count = useMotionValue(0);
   const rounded = useTransform(count, (latest) =>
-    Math.floor(latest).toLocaleString(),
+    format(Math.floor(latest).toLocaleString()),
   );
   const ref = useRef<HTMLSpanElement>(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
@@ -49,7 +49,7 @@ export function HeroSection() {
 
   // Exact server-side totals (the old version summed a 100-row page client-side).
   const { data: summary } = usePublicSummary();
-  const { t } = useT();
+  const { t, tr, num } = useT();
 
   const metricsData: MetricItem[] = [
     { id: "sheltered", target: summary?.peopleSheltered ?? 0, suffix: "", label: t("hero.sheltered") },
@@ -79,7 +79,7 @@ export function HeroSection() {
       <div className="absolute inset-0 z-0">
         <Image
           src="/images/hero-bg.jpg"
-          alt="Monsoon flood landscape overview in Bangladesh"
+          alt={tr("Monsoon flood landscape overview in Bangladesh", "বাংলাদেশের বর্ষাকালের বন্যাকবলিত প্রাকৃতিক দৃশ্য")}
           fill
           priority
           sizes="100vw"
@@ -197,7 +197,7 @@ export function HeroSection() {
                 >
                   <div className="flex flex-col items-center md:items-center w-full">
                     <span className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-center text-white tracking-tight">
-                      <AnimatedNumber value={item.target} />
+                      <AnimatedNumber value={item.target} format={num} />
                       <span className="text-destructive ml-0.5">
                         {item.suffix}
                       </span>

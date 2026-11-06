@@ -52,7 +52,7 @@ const rowVariants: Variants = {
 };
 
 export default function LatestAlerts() {
-  const { t, pick } = useT();
+  const { t, tr, pick, num, lang } = useT();
   const { data, isLoading } = useAlerts({ limit: 6, isActive: true });
   const alerts = data?.data ?? [];
   const maxLevel = Math.max(400, ...alerts.map((a) => a.waterLevelCm ?? 0));
@@ -72,18 +72,23 @@ export default function LatestAlerts() {
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[oklch(0.64_0.22_22)] opacity-75" />
                   <span className="relative inline-flex h-2 w-2 rounded-full bg-[oklch(0.64_0.22_22)]" />
                 </span>
-                Live monitor
+                {tr("Live monitor", "সরাসরি পর্যবেক্ষণ")}
               </span>
-              <h2 className="mt-4 text-3xl md:text-4xl font-extrabold tracking-tight">Latest Alerts</h2>
+              <h2 className="mt-4 text-3xl md:text-4xl font-extrabold tracking-tight">
+                {tr("Latest Alerts", "সর্বশেষ সতর্কতা")}
+              </h2>
               <p className="text-sm md:text-base text-white/65 mt-2">
-                Most recent flood updates from river gauges across Bangladesh
+                {tr(
+                  "Most recent flood updates from river gauges across Bangladesh",
+                  "সারা বাংলাদেশের নদীর পানি পরিমাপক কেন্দ্র থেকে সর্বশেষ বন্যা পরিস্থিতি",
+                )}
               </p>
             </div>
             <Link
               href="/alerts"
               className="group inline-flex items-center gap-2 self-start sm:self-auto rounded-full bg-white px-5 py-2.5 text-sm font-bold text-[oklch(0.25_0.08_265)] shadow-lg transition hover:bg-white/90"
             >
-              View All Alerts
+              {tr("View All Alerts", "সব সতর্কতা দেখুন")}
               <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
             </Link>
           </div>
@@ -116,7 +121,9 @@ export default function LatestAlerts() {
                           <span className={`h-1.5 w-1.5 rounded-full ${style.dot}`} />
                           {t(`severity.${alert.severity}`)}
                         </span>
-                        <span className="text-xs font-semibold text-white/55 tabular-nums">{timeAgo(alert.createdAt)}</span>
+                        <span className="text-xs font-semibold text-white/55 tabular-nums">
+                          {timeAgo(alert.createdAt, lang)}
+                        </span>
                       </div>
 
                       <h3 className="mt-4 text-base md:text-lg font-bold leading-snug text-white group-hover:text-brand-cyan transition-colors">
@@ -131,10 +138,12 @@ export default function LatestAlerts() {
                         <div className="flex items-center justify-between text-xs text-white/60">
                           <span className="inline-flex items-center gap-1.5">
                             <Droplets className="h-3.5 w-3.5" />
-                            Water level
+                            {t("map.waterLevel")}
                           </span>
                           <span className="font-bold text-white tabular-nums">
-                            {alert.waterLevelCm !== null ? `${alert.waterLevelCm} cm` : "—"}
+                            {alert.waterLevelCm !== null
+                              ? `${num(alert.waterLevelCm)} ${tr("cm", "সেমি")}`
+                              : "—"}
                           </span>
                         </div>
                         <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-white/10">
@@ -149,7 +158,7 @@ export default function LatestAlerts() {
           ) : (
             <div className="relative flex flex-col items-center justify-center p-12 text-center rounded-3xl border border-dashed border-white/20">
               <CloudOff className="h-10 w-10 text-white/40" />
-              <p className="text-sm text-white/60 mt-3">No active flood alerts right now.</p>
+              <p className="text-sm text-white/60 mt-3">{t("map.noAlerts")}</p>
             </div>
           )}
         </div>

@@ -3,7 +3,6 @@
 import { MapPin, Droplets, ArrowUpRight } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ALERT_SEVERITY_STYLES } from "@/lib/alert-severity-styles";
 import { timeAgo } from "@/lib/format-time-ago";
 import type { Alert } from "@/lib/types/api";
 import { useT } from "@/lib/i18n/use-t";
@@ -22,7 +21,7 @@ interface AlertCardProps {
 }
 
 export function AlertCard({ alert, onClick }: AlertCardProps) {
-  const { pick } = useT();
+  const { t, tr, pick, num, lang } = useT();
   return (
     <Card
       onClick={onClick}
@@ -37,19 +36,19 @@ export function AlertCard({ alert, onClick }: AlertCardProps) {
               className="text-[10px] font-bold capitalize select-none"
               variant={alert.severity === "CRITICAL" || alert.severity === "DANGER" ? "danger" : "success"}
             >
-              {ALERT_SEVERITY_STYLES[alert.severity].label}
+              {t(`severity.${alert.severity}`)}
             </Badge>
             <span className="text-xs font-semibold text-muted-foreground">{pick(alert.district.nameEn, alert.district.nameBn)}</span>
           </div>
-          <span className="text-xs text-muted-foreground font-mono shrink-0">{timeAgo(alert.createdAt)}</span>
+          <span className="text-xs text-muted-foreground font-mono shrink-0">{timeAgo(alert.createdAt, lang)}</span>
         </div>
 
         <div>
           <h3 className="text-base font-bold text-foreground leading-snug group-hover:text-primary transition-colors flex items-start gap-1">
-            {alert.title}
+            {pick(alert.title, alert.titleBn)}
             <ArrowUpRight className="h-4 w-4 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity mt-0.5" />
           </h3>
-          {alert.titleBn && (
+          {lang === "en" && alert.titleBn && (
             <p className="text-xs text-muted-foreground/80 mt-0.5 italic">{alert.titleBn}</p>
           )}
         </div>
@@ -57,13 +56,13 @@ export function AlertCard({ alert, onClick }: AlertCardProps) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-xs text-muted-foreground">
           <div className="flex items-center gap-2">
             <MapPin className="h-4 w-4 text-muted-foreground/60 shrink-0" />
-            <span className="truncate">{alert.district.nameBn}</span>
+            <span className="truncate">{pick(alert.district.nameEn, alert.district.nameBn)}</span>
           </div>
 
           {alert.waterLevelCm !== null && (
             <div className="flex items-center gap-2">
               <Droplets className="h-4 w-4 text-primary/60 shrink-0" />
-              <span className="font-medium text-foreground">{alert.waterLevelCm} cm</span>
+              <span className="font-medium text-foreground">{num(alert.waterLevelCm)} {tr("cm", "সেমি")}</span>
             </div>
           )}
         </div>

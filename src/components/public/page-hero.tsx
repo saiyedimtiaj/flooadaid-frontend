@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { ChevronRight, type LucideIcon } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/use-t";
 
 export interface HeroStat {
   label: string;
@@ -37,6 +38,7 @@ export function PageHero({
   statsTitle = "Live right now",
   className,
 }: PageHeroProps) {
+  const { t } = useT();
   return (
     <motion.section
       initial={{ opacity: 0, y: 12 }}
@@ -55,7 +57,7 @@ export function PageHero({
         />
         <nav className="relative flex items-center gap-1 text-xs font-semibold text-muted-foreground">
           <Link href="/" className="transition-colors hover:text-foreground">
-            Home
+            {t("nav.home")}
           </Link>
           <ChevronRight className="h-3 w-3" />
           <span className="text-foreground">{crumb}</span>

@@ -4,8 +4,10 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Siren, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useT } from "@/lib/i18n/use-t";
 
 export default function ShelterSosCta() {
+  const { tr } = useT();
   return (
     <motion.div
       initial={{ opacity: 0, y: 24 }}
@@ -60,11 +62,13 @@ export default function ShelterSosCta() {
         </div>
         <div>
           <h3 className="text-lg md:text-xl font-extrabold text-white text-balance">
-            Can&apos;t find a shelter nearby?
+            {tr("Can't find a shelter nearby?", "কাছাকাছি আশ্রয়কেন্দ্র পাচ্ছেন না?")}
           </h3>
           <p className="text-sm text-white/80 mt-1 max-w-md">
-            Send an emergency SOS with your location — volunteers and rescue
-            teams will be dispatched to you directly.
+            {tr(
+              "Send an emergency SOS with your location — volunteers and rescue teams will be dispatched to you directly.",
+              "আপনার অবস্থানসহ জরুরি SOS পাঠান—স্বেচ্ছাসেবক ও উদ্ধারকারী দল সরাসরি আপনার কাছে পাঠানো হবে।",
+            )}
           </p>
         </div>
       </div>
@@ -72,7 +76,7 @@ export default function ShelterSosCta() {
       <Button
         variant={"ghost"}
         className="relative shrink-0 font-bold bg-white text-foreground hover:bg-white/90 shadow-lg group" nativeButton={false} render={<Link href="/sos" className="flex items-center justify-center gap-1.5" />}>
-          Request Emergency SOS
+          {tr("Request Emergency SOS", "জরুরি SOS পাঠান")}
           <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
         </Button>
     </motion.div>

@@ -24,7 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { MapSkeleton } from "@/components/ui/map-skeleton";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useDistricts } from "@/lib/hooks/use-locations";
-import { uploadImage } from "@/lib/upload";
+import { localizeUploadError, uploadImage } from "@/lib/upload";
 import { useT } from "@/lib/i18n/use-t";
 import { cn } from "@/lib/utils";
 import type { SOSFormData } from "./types";
@@ -292,7 +292,7 @@ export function SituationStep() {
 }
 
 export function ContactStep() {
-  const { t } = useT();
+  const { t, tr, lang } = useT();
   const { watch, setValue, register } = useFormContext<SOSFormData>();
   const name = watch("name");
   const phone = watch("phone");
@@ -317,7 +317,8 @@ export function ContactStep() {
       setValue("photoUrls", [...watch("photoUrls"), ...urls]);
     } catch (error) {
       setValue("photoPreviews", before);
-      toast.error(error instanceof Error ? error.message : "Photo upload failed");
+      const message = error instanceof Error ? error.message : "Upload failed. Please try again.";
+      toast.error(localizeUploadError(message, lang));
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = "";
@@ -378,7 +379,7 @@ export function ContactStep() {
               <button
                 type="button"
                 onClick={() => removePhoto(i)}
-                aria-label="Remove photo"
+                aria-label={tr("Remove photo", "ছবি সরান")}
                 className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white"
               >
                 <X className="h-3.5 w-3.5" />

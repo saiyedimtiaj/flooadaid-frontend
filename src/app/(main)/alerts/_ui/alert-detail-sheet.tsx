@@ -5,9 +5,9 @@ import { MapPin, Droplets, Navigation, Share2, Clock } from "lucide-react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ALERT_SEVERITY_STYLES } from "@/lib/alert-severity-styles";
 import { timeAgo } from "@/lib/format-time-ago";
 import type { Alert } from "@/lib/types/api";
+import { useT } from "@/lib/i18n/use-t";
 
 const severityStripColors: Record<Alert["severity"], string> = {
   CRITICAL: "bg-rose-500",
@@ -33,9 +33,8 @@ interface AlertDetailSheetProps {
 }
 
 export function AlertDetailSheet({ alert, isOpen, onClose }: AlertDetailSheetProps) {
+  const { t, tr, pick, num, lang } = useT();
   if (!alert) return null;
-
-  const style = ALERT_SEVERITY_STYLES[alert.severity];
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -49,31 +48,33 @@ export function AlertDetailSheet({ alert, isOpen, onClose }: AlertDetailSheetPro
                 className="text-xs font-bold capitalize select-none"
                 variant={alert.severity === "CRITICAL" || alert.severity === "DANGER" ? "danger" : "success"}
               >
-                {style.label} Alert
+                {t(`severity.${alert.severity}`)} {tr("Alert", "সতর্কতা")}
               </Badge>
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-mono">
                 <Clock className="h-3.5 w-3.5" />
-                <span>Posted {timeAgo(alert.createdAt)}</span>
+                <span>{tr("Posted", "প্রকাশিত")} {timeAgo(alert.createdAt, lang)}</span>
               </div>
             </div>
 
-            <h2 className="text-xl md:text-2xl font-extrabold tracking-tight text-foreground">{alert.title}</h2>
-            {alert.titleBn && (
+            <h2 className="text-xl md:text-2xl font-extrabold tracking-tight text-foreground">{pick(alert.title, alert.titleBn)}</h2>
+            {lang === "en" && alert.titleBn && (
               <p className="text-sm text-muted-foreground italic leading-relaxed">{alert.titleBn}</p>
             )}
           </div>
 
           {/* Location Details Block */}
           <div className="rounded-xl border border-border p-4 bg-muted/20 space-y-3">
-            <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Location</h4>
+            <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{tr("Location", "অবস্থান")}</h4>
             <div className="flex items-start gap-3">
               <MapPin className="h-5 w-5 text-primary shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm font-bold text-foreground">{alert.district.nameEn} District</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{alert.district.nameBn}, Bangladesh</p>
+                <p className="text-sm font-bold text-foreground">
+                  {pick(alert.district.nameEn, alert.district.nameBn)} {tr("District", "জেলা")}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">{tr("Bangladesh", "বাংলাদেশ")}</p>
                 {alert.district.latitude !== null && alert.district.longitude !== null && (
                   <p className="text-[11px] font-mono text-muted-foreground mt-1.5">
-                    Lat: {alert.district.latitude.toFixed(4)} · Lng: {alert.district.longitude.toFixed(4)}
+                    {tr("Lat", "অক্ষাংশ")}: {num(alert.district.latitude.toFixed(4))} · {tr("Lng", "দ্রাঘিমাংশ")}: {num(alert.district.longitude.toFixed(4))}
                   </p>
                 )}
               </div>
@@ -85,27 +86,29 @@ export function AlertDetailSheet({ alert, isOpen, onClose }: AlertDetailSheetPro
             <div className="rounded-xl border border-border p-4 space-y-3">
               <div className="flex items-center gap-2">
                 <Droplets className="h-5 w-5 text-primary" />
-                <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Water Level</h4>
+                <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{t("map.waterLevel")}</h4>
               </div>
               <div className="p-3 bg-muted/10 border border-border/50 rounded-lg w-fit">
-                <span className="text-[10px] font-semibold text-muted-foreground block">CURRENT LEVEL</span>
-                <span className="text-lg font-extrabold text-foreground font-mono">{alert.waterLevelCm} cm</span>
+                <span className="text-[10px] font-semibold text-muted-foreground block">{tr("CURRENT LEVEL", "বর্তমান উচ্চতা")}</span>
+                <span className="text-lg font-extrabold text-foreground font-mono">{num(alert.waterLevelCm)} {tr("cm", "সেমি")}</span>
               </div>
             </div>
           )}
 
           <div className="space-y-2">
-            <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Description</h4>
+            <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{tr("Description", "বিবরণ")}</h4>
             <p className="text-sm text-foreground leading-relaxed">{alert.description}</p>
           </div>
 
           <div className="border-t border-border/40 pt-4 flex flex-col gap-1 text-[11px] text-muted-foreground font-mono">
             <div>
-              Status:{" "}
-              <span className="font-bold text-foreground">{alert.isActive ? "Active" : "Resolved/Inactive"}</span>
+              {tr("Status", "অবস্থা")}:{" "}
+              <span className="font-bold text-foreground">
+                {alert.isActive ? tr("Active", "সক্রিয়") : tr("Resolved/Inactive", "সমাধান হয়েছে/নিষ্ক্রিয়")}
+              </span>
             </div>
             <div>
-              Last Updated: <span className="font-bold text-foreground">{timeAgo(alert.updatedAt)}</span>
+              {tr("Last Updated", "সর্বশেষ হালনাগাদ")}: <span className="font-bold text-foreground">{timeAgo(alert.updatedAt, lang)}</span>
             </div>
           </div>
         </div>
@@ -115,7 +118,7 @@ export function AlertDetailSheet({ alert, isOpen, onClose }: AlertDetailSheetPro
               href={sheltersNearAlert(alert)}
               className="flex items-center justify-center gap-2 w-full" />}>
               <Navigation className="h-4 w-4" />
-              Find Nearby Shelters
+              {tr("Find Nearby Shelters", "কাছের আশ্রয়কেন্দ্র খুঁজুন")}
             </Button>
           <Button
             variant="outline"

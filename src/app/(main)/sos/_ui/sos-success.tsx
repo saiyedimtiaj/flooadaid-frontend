@@ -50,7 +50,7 @@ export function SOSSuccess({
   location: { lat: number; lng: number } | null;
   onNew: () => void;
 }) {
-  const { t } = useT();
+  const { t, lang } = useT();
   const [copied, setCopied] = useState(false);
   const status = sos?.status ?? "PENDING";
   const current = status === "CANCELLED" ? -1 : STEPS.indexOf(status);
@@ -180,7 +180,7 @@ export function SOSSuccess({
                         <p className={cn("text-sm font-semibold", reached ? "text-foreground" : "text-muted-foreground")}>
                           {t(`tracker.status.${s}`)}
                         </p>
-                        <p className="text-xs text-muted-foreground">{at ? timeAgo(at) : isNow ? t("sos.inProgressNow") : "—"}</p>
+                        <p className="text-xs text-muted-foreground">{at ? timeAgo(at, lang) : isNow ? t("sos.inProgressNow") : "—"}</p>
                       </div>
                     </li>
                   );

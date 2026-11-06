@@ -6,15 +6,17 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { usePublicVolunteerStats } from "@/lib/hooks/use-volunteers";
 import { usePublicSosStats } from "@/lib/hooks/use-sos";
+import { useT } from "@/lib/i18n/use-t";
 
 export default function VolunteerCTA() {
+  const { tr, num, lang } = useT();
   const { data: volunteerStats } = usePublicVolunteerStats();
   const { data: sosStats } = usePublicSosStats();
 
   const stats = [
-    { value: String(volunteerStats?.total ?? 0), label: "Active Volunteers" },
-    { value: String(sosStats?.resolved ?? 0), label: "Rescues Completed" },
-    { value: String(volunteerStats?.districtsCovered ?? 0), label: "Districts Covered" },
+    { value: num(volunteerStats?.total ?? 0), label: tr("Active Volunteers", "সক্রিয় স্বেচ্ছাসেবক") },
+    { value: num(sosStats?.resolved ?? 0), label: tr("Rescues Completed", "সম্পন্ন উদ্ধার") },
+    { value: num(volunteerStats?.districtsCovered ?? 0), label: tr("Districts Covered", "অন্তর্ভুক্ত জেলা") },
   ];
 
   const volunteerCount = volunteerStats?.total ?? 0;
@@ -40,7 +42,7 @@ export default function VolunteerCTA() {
               <div className="relative overflow-hidden inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 border border-white/20 backdrop-blur-xs select-none">
                 <Heart className="h-3 w-3 text-white fill-white shrink-0" />
                 <span className="text-[10px] md:text-xs font-bold text-white uppercase tracking-wider">
-                  Join the Movement
+                  {tr("Join the Movement", "মানবিক উদ্যোগে যোগ দিন")}
                 </span>
                 <motion.div
                   className="absolute inset-y-0 -left-1/2 w-1/3 bg-linear-to-r from-transparent via-white/20 to-transparent skew-x-12 pointer-events-none"
@@ -51,14 +53,21 @@ export default function VolunteerCTA() {
               </div>
 
               <h2 className="text-2xl md:text-3xl lg:text-4xl font-extrabold text-white leading-tight mt-4 text-balance">
-                Every Hand Counts When the Water Rises
+                {tr("Every Hand Counts When the Water Rises", "পানি বাড়লে প্রতিটি সাহায্যের হাত গুরুত্বপূর্ণ")}
               </h2>
 
               <p className="text-sm md:text-base lg:text-lg text-white/80 leading-relaxed mt-4 max-w-lg">
-                {volunteerCount > 0
-                  ? `${volunteerCount} volunteer${volunteerCount === 1 ? "" : "s"} ${volunteerCount === 1 ? "is" : "are"} already helping across ${volunteerStats?.districtsCovered ?? 0} district${volunteerStats?.districtsCovered === 1 ? "" : "s"} — coordinating rescues, distributing relief, and managing shelters.`
-                  : "Be one of the first to help — coordinating rescues, distributing relief, and managing shelters."}{" "}
-                Your skills can save lives. Register in under a minute.
+                {lang === "bn"
+                  ? volunteerCount > 0
+                    ? `${num(volunteerCount)} জন স্বেচ্ছাসেবক ইতিমধ্যে ${num(volunteerStats?.districtsCovered ?? 0)}টি জেলায় উদ্ধার সমন্বয়, ত্রাণ বিতরণ ও আশ্রয়কেন্দ্র পরিচালনায় সহায়তা করছেন।`
+                    : "প্রথম দিকের স্বেচ্ছাসেবকদের একজন হোন—উদ্ধার সমন্বয়, ত্রাণ বিতরণ ও আশ্রয়কেন্দ্র পরিচালনায় সহায়তা করুন।"
+                  : volunteerCount > 0
+                    ? `${volunteerCount} volunteer${volunteerCount === 1 ? "" : "s"} ${volunteerCount === 1 ? "is" : "are"} already helping across ${volunteerStats?.districtsCovered ?? 0} district${volunteerStats?.districtsCovered === 1 ? "" : "s"} — coordinating rescues, distributing relief, and managing shelters.`
+                    : "Be one of the first to help — coordinating rescues, distributing relief, and managing shelters."}{" "}
+                {tr(
+                  "Your skills can save lives. Register in under a minute.",
+                  "আপনার দক্ষতা জীবন বাঁচাতে পারে। এক মিনিটেরও কম সময়ে নিবন্ধন করুন।",
+                )}
               </p>
 
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mt-6 md:mt-8 w-full sm:w-auto">
@@ -66,13 +75,13 @@ export default function VolunteerCTA() {
                   className="bg-white text-foreground hover:bg-white/90 font-bold transition-all duration-200 shadow-md group shrink-0"
                   variant={"ghost"} nativeButton={false} render={<Link href="/get-involved" className="flex items-center gap-1.5" />}>
                     <Users className="h-4 w-4 mr-2 text-primary shrink-0 transition-transform duration-300 group-hover:scale-105" />
-                    Register as Volunteer
+                    {tr("Register as Volunteer", "স্বেচ্ছাসেবক হিসেবে নিবন্ধন")}
                   </Button>
 
                 <Button
                   variant="outline"
                   className="bg-transparent border-white/30 text-white hover:bg-white/10 hover:text-white font-bold transition-all duration-200 shrink-0" nativeButton={false} render={<Link href="/how-it-works" className="flex items-center gap-1.5" />}>
-                    Learn More
+                    {tr("Learn More", "আরও জানুন")}
                     <ArrowRight className="h-4 w-4 ml-2 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5" />
                   </Button>
               </div>

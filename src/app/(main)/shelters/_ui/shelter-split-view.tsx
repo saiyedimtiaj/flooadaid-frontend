@@ -15,6 +15,7 @@ import ShelterCard from "./shelter-card";
 import ShelterMap from "./shelter-map-client";
 import { toast } from "sonner";
 import type { Shelter } from "@/lib/types/api";
+import { useT } from "@/lib/i18n/use-t";
 
 interface ShelterSplitViewProps {
   shelters: Shelter[];
@@ -55,6 +56,7 @@ export default function ShelterSplitView({
   onClearFilters,
   forceNearest = false,
 }: ShelterSplitViewProps) {
+  const { tr, num, lang } = useT();
   const [nearestFirst, setNearestFirst] = useState(false);
   const [activeTab, setActiveTab] = useState<"list" | "map">("list");
   const cardRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
@@ -94,8 +96,8 @@ export default function ShelterSplitView({
   const handleNearestToggle = () => {
     if (!userLocation) {
       if (!navigator.geolocation) {
-        toast.error("Not Supported", {
-          description: "Geolocation is not supported by your browser.",
+        toast.error(tr("Not Supported", "সমর্থিত নয়"), {
+          description: tr("Geolocation is not supported by your browser.", "আপনার ব্রাউজারে অবস্থান শনাক্তকরণ সমর্থিত নয়।"),
         });
         return;
       }
@@ -109,9 +111,11 @@ export default function ShelterSplitView({
           setNearestFirst(true);
         },
         () => {
-          toast.error("Location Access Denied", {
-            description:
+          toast.error(tr("Location Access Denied", "অবস্থান ব্যবহারের অনুমতি নেই"), {
+            description: tr(
               "Please enable location permissions to sort by distance.",
+              "দূরত্ব অনুযায়ী সাজাতে অবস্থানের অনুমতি চালু করুন।",
+            ),
           });
         },
         { enableHighAccuracy: true },
@@ -135,14 +139,14 @@ export default function ShelterSplitView({
               className="flex items-center justify-center gap-2 text-sm font-semibold rounded-full transition-all duration-200 data-active:bg-linear-to-br data-active:from-primary data-active:to-[color-mix(in_oklch,var(--primary),black_18%)] data-active:text-primary-foreground data-active:shadow-sm dark:data-active:bg-linear-to-br dark:data-active:border-transparent"
             >
               <ListIcon className="size-4" />
-              <span>List</span>
+              <span>{tr("List", "তালিকা")}</span>
             </TabsTrigger>
             <TabsTrigger
               value="map"
               className="flex items-center justify-center gap-2 text-sm font-semibold rounded-full transition-all duration-200 data-active:bg-linear-to-br data-active:from-primary data-active:to-[color-mix(in_oklch,var(--primary),black_18%)] data-active:text-primary-foreground data-active:shadow-sm dark:data-active:bg-linear-to-br dark:data-active:border-transparent"
             >
               <MapIcon className="size-4" />
-              <span>Map</span>
+              <span>{tr("Map", "মানচিত্র")}</span>
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -173,8 +177,9 @@ export default function ShelterSplitView({
           <div className="h-[calc(100vh-220px)] min-h-100 max-h-175 flex flex-col gap-3">
             <div className="flex items-center justify-between pb-1 shrink-0">
               <span className="text-sm text-muted-foreground font-medium">
-                {sortedShelters.length}{" "}
-                {sortedShelters.length === 1 ? "shelter" : "shelters"} found
+                {lang === "bn"
+                  ? `${num(sortedShelters.length)}টি আশ্রয়কেন্দ্র পাওয়া গেছে`
+                  : `${sortedShelters.length} ${sortedShelters.length === 1 ? "shelter" : "shelters"} found`}
               </span>
               <button
                 onClick={handleNearestToggle}
@@ -185,7 +190,7 @@ export default function ShelterSplitView({
                 }`}
               >
                 <ArrowUpDown className="size-3" />
-                <span>Nearest First</span>
+                <span>{tr("Nearest First", "কাছেরটি আগে")}</span>
               </button>
             </div>
 
@@ -203,11 +208,13 @@ export default function ShelterSplitView({
                       <Search className="size-8 text-muted-foreground/40" />
                     </div>
                     <h3 className="text-lg font-semibold text-foreground mt-4">
-                      No shelters found
+                      {tr("No shelters found", "কোনো আশ্রয়কেন্দ্র পাওয়া যায়নি")}
                     </h3>
                     <p className="text-sm text-muted-foreground mt-1 max-w-70">
-                      Try adjusting your search query, selecting another
-                      district, or clearing filters.
+                      {tr(
+                        "Try adjusting your search query, selecting another district, or clearing filters.",
+                        "খোঁজের শব্দ বদলে, অন্য জেলা বেছে বা ফিল্টার মুছে চেষ্টা করুন।",
+                      )}
                     </p>
                     <Button
                       variant="outline"
@@ -216,7 +223,7 @@ export default function ShelterSplitView({
                       className="mt-4 gap-1.5 h-9"
                     >
                       <X className="size-4" />
-                      Clear Filters
+                      {tr("Clear Filters", "ফিল্টার মুছুন")}
                     </Button>
                   </motion.div>
                 ) : (
@@ -273,8 +280,9 @@ export default function ShelterSplitView({
             >
               <div className="flex items-center justify-between py-1 shrink-0">
                 <span className="text-sm text-muted-foreground font-medium">
-                  {sortedShelters.length}{" "}
-                  {sortedShelters.length === 1 ? "shelter" : "shelters"} found
+                  {lang === "bn"
+                    ? `${num(sortedShelters.length)}টি আশ্রয়কেন্দ্র পাওয়া গেছে`
+                    : `${sortedShelters.length} ${sortedShelters.length === 1 ? "shelter" : "shelters"} found`}
                 </span>
                 <button
                   onClick={handleNearestToggle}
@@ -285,7 +293,7 @@ export default function ShelterSplitView({
                   }`}
                 >
                   <ArrowUpDown className="size-3" />
-                  <span>Nearest First</span>
+                  <span>{tr("Nearest First", "কাছেরটি আগে")}</span>
                 </button>
               </div>
 
@@ -303,11 +311,13 @@ export default function ShelterSplitView({
                         <Search className="size-8 text-muted-foreground/40" />
                       </div>
                       <h3 className="text-lg font-semibold text-foreground mt-4">
-                        No shelters found
+                        {tr("No shelters found", "কোনো আশ্রয়কেন্দ্র পাওয়া যায়নি")}
                       </h3>
                       <p className="text-sm text-muted-foreground mt-1 max-w-70">
-                        Try adjusting your search query, selecting another
-                        district, or clearing filters.
+                        {tr(
+                          "Try adjusting your search query, selecting another district, or clearing filters.",
+                          "খোঁজের শব্দ বদলে, অন্য জেলা বেছে বা ফিল্টার মুছে চেষ্টা করুন।",
+                        )}
                       </p>
                       <Button
                         variant="outline"
@@ -316,7 +326,7 @@ export default function ShelterSplitView({
                         className="mt-4 gap-1.5 h-9"
                       >
                         <X className="size-4" />
-                        Clear Filters
+                        {tr("Clear Filters", "ফিল্টার মুছুন")}
                       </Button>
                     </motion.div>
                   ) : (

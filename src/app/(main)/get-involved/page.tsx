@@ -16,29 +16,36 @@ import { Card } from "@/components/ui/card";
 import { PublicHero } from "@/components/public/public-hero";
 import { useCurrentUser } from "@/lib/hooks/use-current-user";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/use-t";
 
 const SKILLS = [
-  { icon: LifeBuoy, label: "Boat operation & rescue" },
-  { icon: Stethoscope, label: "Medical & first aid" },
-  { icon: Boxes, label: "Relief distribution & logistics" },
-  { icon: Users, label: "Shelter coordination" },
+  { icon: LifeBuoy, label: "Boat operation & rescue", labelBn: "নৌকা পরিচালনা ও উদ্ধার" },
+  { icon: Stethoscope, label: "Medical & first aid", labelBn: "চিকিৎসা ও প্রাথমিক সেবা" },
+  { icon: Boxes, label: "Relief distribution & logistics", labelBn: "ত্রাণ বিতরণ ও সরবরাহ ব্যবস্থাপনা" },
+  { icon: Users, label: "Shelter coordination", labelBn: "আশ্রয়কেন্দ্র সমন্বয়" },
 ];
 
 const STEPS = [
   {
     step: "1",
     title: "Create an account",
+    titleBn: "একটি অ্যাকাউন্ট তৈরি করুন",
     description: "Sign up with your name, phone number, and home district.",
+    descriptionBn: "আপনার নাম, ফোন নম্বর ও নিজ জেলা দিয়ে সাইন আপ করুন।",
   },
   {
     step: "2",
     title: "Register your skills",
+    titleBn: "আপনার দক্ষতা নিবন্ধন করুন",
     description: "Tell us what you're good at and when you're available.",
+    descriptionBn: "আপনি কোন কাজে দক্ষ এবং কখন সময় দিতে পারবেন তা জানান।",
   },
   {
     step: "3",
     title: "Get verified & assigned",
+    titleBn: "যাচাই হয়ে দায়িত্ব নিন",
     description: "An admin verifies your profile, then you'll be assigned to SOS requests near you.",
+    descriptionBn: "অ্যাডমিন আপনার প্রোফাইল যাচাই করার পর কাছাকাছি SOS অনুরোধের দায়িত্ব দেওয়া হবে।",
   },
 ];
 
@@ -49,22 +56,26 @@ const item: Variants = {
 };
 
 export default function GetInvolvedPage() {
+  const { tr, num } = useT();
   const { data: user } = useCurrentUser();
 
   const primaryCta = !user
-    ? { href: "/signup", label: "Sign Up to Volunteer" }
+    ? { href: "/signup", label: tr("Sign Up to Volunteer", "স্বেচ্ছাসেবক হতে সাইন আপ করুন") }
     : user.role === "VOLUNTEER"
-      ? { href: "/volunteer", label: "Go to Volunteer Dashboard" }
-      : { href: "/volunteer/profile", label: "Register as Volunteer" };
+      ? { href: "/volunteer", label: tr("Go to Volunteer Dashboard", "স্বেচ্ছাসেবক ড্যাশবোর্ডে যান") }
+      : { href: "/volunteer/profile", label: tr("Register as Volunteer", "স্বেচ্ছাসেবক হিসেবে নিবন্ধন") };
 
   return (
     <div className="bg-background">
       <PublicHero
-        eyebrow="Join the Movement"
-        breadcrumb="Get Involved"
+        eyebrow={tr("Join the Movement", "মানবিক উদ্যোগে যোগ দিন")}
+        breadcrumb={tr("Get Involved", "যুক্ত হোন")}
         icon={HeartHandshake}
-        title="Every Hand Counts When the Water Rises"
-        description="FloodAid BD volunteers coordinate rescues, distribute relief, and staff shelters across flood-affected districts. Register once — we'll match you to nearby SOS requests as they come in."
+        title={tr("Every Hand Counts When the Water Rises", "পানি বাড়লে প্রতিটি সাহায্যের হাত গুরুত্বপূর্ণ")}
+        description={tr(
+          "FloodAid BD volunteers coordinate rescues, distribute relief, and staff shelters across flood-affected districts. Register once — we'll match you to nearby SOS requests as they come in.",
+          "FloodAid BD-এর স্বেচ্ছাসেবকেরা বন্যাকবলিত জেলায় উদ্ধার সমন্বয়, ত্রাণ বিতরণ ও আশ্রয়কেন্দ্র পরিচালনা করেন। একবার নিবন্ধন করুন—কাছাকাছি SOS অনুরোধ এলে আমরা আপনাকে যুক্ত করব।",
+        )}
       />
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-5xl py-14 md:py-20">
@@ -77,8 +88,12 @@ export default function GetInvolvedPage() {
 
         {/* Skills */}
         <div className="text-center mb-8">
-          <h2 className="text-xl md:text-2xl font-bold tracking-tight text-foreground">Skills That Save Lives</h2>
-          <p className="text-sm text-muted-foreground mt-2">Whatever you&apos;re good at, there&apos;s a role for you.</p>
+          <h2 className="text-xl md:text-2xl font-bold tracking-tight text-foreground">
+            {tr("Skills That Save Lives", "জীবন বাঁচায় যে দক্ষতা")}
+          </h2>
+          <p className="text-sm text-muted-foreground mt-2">
+            {tr("Whatever you're good at, there's a role for you.", "আপনি যে কাজেই দক্ষ হন, আপনার জন্য একটি ভূমিকা আছে।")}
+          </p>
         </div>
         <motion.div
           variants={container}
@@ -87,13 +102,13 @@ export default function GetInvolvedPage() {
           viewport={{ once: true, margin: "-80px" }}
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-20"
         >
-          {SKILLS.map(({ icon: Icon, label }) => (
+          {SKILLS.map(({ icon: Icon, label, labelBn }) => (
             <motion.div key={label} variants={item}>
               <Card className="group h-full rounded-2xl border border-border bg-card p-5 text-center transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-primary/25">
                 <div className="flex items-center justify-center h-12 w-12 rounded-2xl bg-primary/10 text-primary mx-auto mb-3 transition-transform group-hover:scale-105">
                   <Icon className="h-5 w-5" />
                 </div>
-                <p className="text-sm font-semibold text-foreground">{label}</p>
+                <p className="text-sm font-semibold text-foreground">{tr(label, labelBn)}</p>
               </Card>
             </motion.div>
           ))}
@@ -101,7 +116,9 @@ export default function GetInvolvedPage() {
 
         {/* Steps */}
         <div className="text-center mb-10">
-          <h2 className="text-xl md:text-2xl font-bold tracking-tight text-foreground">Three Steps to Get Started</h2>
+          <h2 className="text-xl md:text-2xl font-bold tracking-tight text-foreground">
+            {tr("Three Steps to Get Started", "শুরু করুন তিন ধাপে")}
+          </h2>
         </div>
         <motion.div
           variants={container}
@@ -113,10 +130,12 @@ export default function GetInvolvedPage() {
           {STEPS.map((s) => (
             <motion.div key={s.step} variants={item} className="flex flex-col items-start">
               <div className="flex items-center justify-center h-10 w-10 rounded-full bg-linear-to-br from-primary to-[color-mix(in_oklch,var(--primary),black_18%)] text-primary-foreground text-sm font-extrabold mb-3 shadow-sm">
-                {s.step}
+                {num(s.step)}
               </div>
-              <h3 className="text-base font-bold text-foreground">{s.title}</h3>
-              <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">{s.description}</p>
+              <h3 className="text-base font-bold text-foreground">{tr(s.title, s.titleBn)}</h3>
+              <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
+                {tr(s.description, s.descriptionBn)}
+              </p>
             </motion.div>
           ))}
         </motion.div>
@@ -128,14 +147,17 @@ export default function GetInvolvedPage() {
               <ShieldCheck className="h-6 w-6" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-foreground">Already registered?</h3>
+              <h3 className="text-base font-bold text-foreground">{tr("Already registered?", "আগেই নিবন্ধিত?")}</h3>
               <p className="text-sm text-muted-foreground mt-0.5">
-                Sign in to view your assigned tasks and update your availability.
+                {tr(
+                  "Sign in to view your assigned tasks and update your availability.",
+                  "আপনার দায়িত্ব দেখুন এবং সময় দেওয়ার অবস্থা হালনাগাদ করতে সাইন ইন করুন।",
+                )}
               </p>
             </div>
           </div>
           <Link href="/login" className={cn(buttonVariants({ variant: "outline" }), "font-semibold shrink-0")}>
-            Sign In
+            {tr("Sign In", "সাইন ইন")}
           </Link>
         </Card>
       </div>

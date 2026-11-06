@@ -65,7 +65,7 @@ const snapshot = () => readMySosIds().join(",");
 export function TrackerContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { t, pick, num } = useT();
+  const { t, tr, pick, num, lang } = useT();
   const [input, setInput] = useState("");
   const [copied, setCopied] = useState(false);
   const stored = useSyncExternalStore(subscribe, snapshot, () => "");
@@ -232,7 +232,7 @@ export function TrackerContent() {
                       {t("sos.liveStatus")}
                     </span>
                     <span className="text-xs text-white/60">
-                      {t("tracker.updated")} {timeAgo(sos.updatedAt)}
+                      {t("tracker.updated")} {timeAgo(sos.updatedAt, lang)}
                     </span>
                   </div>
                   <h2 className="relative mt-4 text-3xl font-extrabold tracking-tight md:text-4xl">{t(`tracker.status.${sos.status}`)}</h2>
@@ -271,7 +271,7 @@ export function TrackerContent() {
                               <p className={cn("text-sm font-semibold", reached ? "text-foreground" : "text-muted-foreground")}>
                                 {t(`tracker.status.${s.status}`)}
                               </p>
-                              <p className="text-xs text-muted-foreground">{at ? timeAgo(at) : now ? t("sos.inProgressNow") : t("tracker.next")}</p>
+                              <p className="text-xs text-muted-foreground">{at ? timeAgo(at, lang) : now ? t("sos.inProgressNow") : t("tracker.next")}</p>
                             </div>
                           </li>
                         );
@@ -319,7 +319,7 @@ export function TrackerContent() {
                       <div className="flex flex-wrap items-baseline justify-between gap-x-4">
                         <p className="font-semibold text-foreground">{t(`tracker.status.${h.status}`)}</p>
                         <span className="text-xs text-muted-foreground">
-                          {new Date(h.createdAt).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                          {new Date(h.createdAt).toLocaleString(lang === "bn" ? "bn-BD" : "en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
                         </span>
                       </div>
                       {h.note && <p className="mt-0.5 text-sm text-muted-foreground">{h.note}</p>}
@@ -345,7 +345,7 @@ export function TrackerContent() {
                   <button
                     type="button"
                     onClick={copy}
-                    aria-label="Copy reference ID"
+                    aria-label={tr("Copy reference ID", "রেফারেন্স আইডি কপি করুন")}
                     className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border bg-card hover:bg-muted"
                   >
                     {copied ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
@@ -375,7 +375,7 @@ export function TrackerContent() {
                   <div className="flex items-center gap-3">
                     <Clock className="h-4 w-4 shrink-0 text-muted-foreground" />
                     <dd className="text-foreground">
-                      {t("tracker.sent")} {timeAgo(sos.createdAt)}
+                      {t("tracker.sent")} {timeAgo(sos.createdAt, lang)}
                     </dd>
                   </div>
                   {!sos.redacted && (

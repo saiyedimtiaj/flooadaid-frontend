@@ -8,6 +8,7 @@ import { StatCard } from "@/components/dashboard/stat-card";
 import { useAlerts } from "@/lib/hooks/use-alerts";
 import { useShelters } from "@/lib/hooks/use-shelters";
 import { usePublicSosStats } from "@/lib/hooks/use-sos";
+import { useT } from "@/lib/i18n/use-t";
 
 interface StatItem {
   icon: React.ComponentType<{ className?: string }>;
@@ -26,6 +27,7 @@ interface StatItem {
 }
 
 export default function LiveStatsBar() {
+  const { tr, num } = useT();
   const containerRef = useRef<HTMLDivElement>(null);
   const isInView = useInView(containerRef, { once: true, amount: 0.1 });
 
@@ -41,39 +43,39 @@ export default function LiveStatsBar() {
     {
       icon: AlertTriangle,
       accentColor: "destructive",
-      label: "Districts Affected",
-      number: districtsAffected ? String(districtsAffected) : "0",
-      trend: { icon: Clock, text: "Live count", type: "neutral" },
+      label: tr("Districts Affected", "ক্ষতিগ্রস্ত জেলা"),
+      number: num(districtsAffected),
+      trend: { icon: Clock, text: tr("Live count", "সরাসরি হিসাব"), type: "neutral" },
       href: "/alerts",
-      footer: "See districts",
+      footer: tr("See districts", "জেলাগুলো দেখুন"),
     },
     {
       icon: MapPinned,
       accentColor: "warning",
-      label: "Active Alerts",
-      number: activeAlerts ? String(activeAlerts.meta.total) : "—",
-      trend: { icon: ArrowUpRight, text: "Updated in real time", type: "neutral" },
+      label: tr("Active Alerts", "সক্রিয় সতর্কতা"),
+      number: activeAlerts ? num(activeAlerts.meta.total) : "—",
+      trend: { icon: ArrowUpRight, text: tr("Updated in real time", "সরাসরি হালনাগাদ"), type: "neutral" },
       href: "/alerts",
-      footer: "View alerts",
+      footer: tr("View alerts", "সতর্কতা দেখুন"),
     },
     {
       icon: Home,
       accentColor: "success",
-      label: "Shelters Open",
-      number: shelters ? String(shelters.meta.total) : "—",
-      trend: { icon: ArrowUpRight, text: "Across Bangladesh", type: "positive" },
+      label: tr("Shelters Open", "খোলা আশ্রয়কেন্দ্র"),
+      number: shelters ? num(shelters.meta.total) : "—",
+      trend: { icon: ArrowUpRight, text: tr("Across Bangladesh", "সারা বাংলাদেশে"), type: "positive" },
       href: "/shelters",
-      footer: "Find a shelter",
+      footer: tr("Find a shelter", "আশ্রয়কেন্দ্র খুঁজুন"),
     },
     {
       icon: LifeBuoy,
       accentColor: "primary",
-      label: "SOS Resolved",
-      number: sosStats ? `${sosStats.resolved} / ${sosStats.total}` : "—",
+      label: tr("SOS Resolved", "সমাধান হওয়া SOS"),
+      number: sosStats ? `${num(sosStats.resolved)} / ${num(sosStats.total)}` : "—",
       progressValue: resolutionRate,
-      progressText: `${resolutionRate}% resolution rate`,
+      progressText: tr(`${resolutionRate}% resolution rate`, `${num(resolutionRate)}% সমাধানের হার`),
       href: "/tracker",
-      footer: "Track an SOS",
+      footer: tr("Track an SOS", "SOS ট্র্যাক করুন"),
     },
   ];
 

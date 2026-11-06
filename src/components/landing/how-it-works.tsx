@@ -3,16 +3,21 @@
 import { AlertTriangle, MapPin, LifeBuoy, ArrowRight, Check, ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import { motion, Variants } from "framer-motion";
+import { useT } from "@/lib/i18n/use-t";
 
 interface StepItem {
   number: string;
   icon: React.ComponentType<{ className?: string }>;
   tone: "amber" | "green" | "red";
   title: string;
+  titleBn: string;
   description: string;
+  descriptionBn: string;
   detail: string;
+  detailBn: string;
   href: string;
   cta: string;
+  ctaBn: string;
 }
 
 const steps: StepItem[] = [
@@ -21,30 +26,42 @@ const steps: StepItem[] = [
     icon: AlertTriangle,
     tone: "amber",
     title: "Check Flood Alerts",
+    titleBn: "বন্যা সতর্কতা দেখুন",
     description: "View real-time water levels and severity alerts for your district on an interactive map.",
+    descriptionBn: "ইন্টার‌্যাকটিভ মানচিত্রে আপনার জেলার সরাসরি পানির উচ্চতা ও বিপদের মাত্রা দেখুন।",
     detail: "5 severity levels, updated live",
+    detailBn: "৫টি বিপদমাত্রা, সরাসরি হালনাগাদ",
     href: "/alerts",
     cta: "Open alerts",
+    ctaBn: "সতর্কতা খুলুন",
   },
   {
     number: "02",
     icon: MapPin,
     tone: "green",
     title: "Find Nearest Shelter",
+    titleBn: "নিকটতম আশ্রয়কেন্দ্র খুঁজুন",
     description: "Locate nearby emergency shelters with capacity info, facilities, and GPS directions.",
+    descriptionBn: "ধারণক্ষমতা, সুবিধা ও GPS দিকনির্দেশনাসহ কাছের জরুরি আশ্রয়কেন্দ্র খুঁজুন।",
     detail: "Live capacity & facility data",
+    detailBn: "সরাসরি ধারণক্ষমতা ও সুবিধার তথ্য",
     href: "/shelters",
     cta: "Find shelters",
+    ctaBn: "আশ্রয়কেন্দ্র খুঁজুন",
   },
   {
     number: "03",
     icon: LifeBuoy,
     tone: "red",
     title: "Request Emergency Help",
+    titleBn: "জরুরি সাহায্য চান",
     description: "Send an SOS with your location. Volunteers and rescue teams will be dispatched to you.",
+    descriptionBn: "আপনার অবস্থানসহ SOS পাঠান। স্বেচ্ছাসেবক ও উদ্ধারকারী দল আপনার কাছে পাঠানো হবে।",
     detail: "No account needed",
+    detailBn: "অ্যাকাউন্ট প্রয়োজন নেই",
     href: "/sos",
     cta: "Send SOS",
+    ctaBn: "SOS পাঠান",
   },
 ];
 
@@ -80,19 +97,23 @@ const cardVariants: Variants = {
 };
 
 export default function HowItWorks() {
+  const { tr } = useT();
   return (
     <section className="relative my-6 md:my-20 w-full overflow-hidden">
       <div className="relative container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col gap-12">
         <div className="text-center flex flex-col items-center">
           <span className="inline-flex items-center rounded-full bg-primary/10 px-3.5 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-primary">
-            Simple &amp; Fast
+            {tr("Simple & Fast", "সহজ ও দ্রুত")}
           </span>
           <h2 className="mt-4 text-3xl md:text-5xl font-extrabold tracking-tight text-foreground text-balance">
-            Three steps from <span className="text-brand">panic to safety</span>
+            {tr("Three steps from", "তিন ধাপে")} {" "}
+            <span className="text-brand">{tr("panic to safety", "বিপদ থেকে নিরাপত্তা")}</span>
           </h2>
           <p className="text-sm md:text-lg text-muted-foreground mt-4 max-w-xl text-balance">
-            Whether water is rising outside or you are already stranded — FloodAid gets you the
-            right help, fast.
+            {tr(
+              "Whether water is rising outside or you are already stranded — FloodAid gets you the right help, fast.",
+              "বাইরে পানি বাড়ছে বা আপনি ইতিমধ্যে আটকা পড়েছেন—FloodAid দ্রুত সঠিক সাহায্যের সঙ্গে আপনাকে যুক্ত করে।",
+            )}
           </p>
         </div>
 
@@ -152,19 +173,23 @@ export default function HowItWorks() {
                       <StepIcon className="h-8 w-8" />
                     </div>
                     <span className="absolute right-6 top-6 rounded-full bg-white/20 px-3 py-1 text-xs font-black tracking-wider text-white ring-1 ring-white/30">
-                      STEP {step.number}
+                      {tr("STEP", "ধাপ")} {step.number}
                     </span>
                   </div>
 
                   <div className="flex flex-1 flex-col gap-3 p-6 pt-3">
                     <span className={`inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${t.chip} ${t.text}`}>
                       <Check className="h-3 w-3" />
-                      {step.detail}
+                      {tr(step.detail, step.detailBn)}
                     </span>
-                    <h3 className="text-xl font-extrabold text-foreground leading-tight">{step.title}</h3>
-                    <p className="text-sm md:text-[15px] text-muted-foreground leading-relaxed">{step.description}</p>
+                    <h3 className="text-xl font-extrabold text-foreground leading-tight">
+                      {tr(step.title, step.titleBn)}
+                    </h3>
+                    <p className="text-sm md:text-[15px] text-muted-foreground leading-relaxed">
+                      {tr(step.description, step.descriptionBn)}
+                    </p>
                     <span className={`mt-auto pt-3 inline-flex items-center gap-1.5 text-sm font-bold ${t.text}`}>
-                      {step.cta}
+                      {tr(step.cta, step.ctaBn)}
                       <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                     </span>
                   </div>
@@ -175,12 +200,14 @@ export default function HowItWorks() {
         </motion.div>
 
         <div className="flex items-center justify-center gap-1.5">
-          <span className="text-sm text-muted-foreground font-medium">Want to see the full platform?</span>
+          <span className="text-sm text-muted-foreground font-medium">
+            {tr("Want to see the full platform?", "পুরো প্ল্যাটফর্মটি দেখতে চান?")}
+          </span>
           <Link
             href="/how-it-works"
             className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-4 py-1.5 text-sm font-semibold text-primary hover:bg-primary/15 group"
           >
-            Learn More
+            {tr("Learn More", "আরও জানুন")}
             <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
           </Link>
         </div>

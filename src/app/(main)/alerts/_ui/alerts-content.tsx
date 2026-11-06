@@ -15,6 +15,7 @@ import { useAlerts } from "@/lib/hooks/use-alerts";
 import { ALERT_SEVERITIES } from "@/lib/alert-severity-styles";
 import type { Alert, AlertSeverity } from "@/lib/types/api";
 import type { SelectedLocation } from "@/components/map/location-search-modal";
+import { useT } from "@/lib/i18n/use-t";
 
 function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371;
@@ -46,6 +47,7 @@ const SEVERITY_WEIGHT: Record<AlertSeverity, number> = {
 };
 
 export function AlertsContent() {
+  const { t, tr, num } = useT();
   // Deep link from the home-page map: /alerts?district=<id>
   const searchParams = useSearchParams();
   const districtParam = Number(searchParams.get("district"));
@@ -159,18 +161,21 @@ export function AlertsContent() {
       {/* 1. Page Header */}
       <PageHero
         icon={Radar}
-        crumb="Flood Alerts"
-        eyebrow="Real-time monitoring"
-        title="Flood Alerts"
-        description="Water levels and flood warnings for every district in Bangladesh — updated as river gauges report."
-        statsTitle="Across Bangladesh"
+        crumb={tr("Flood Alerts", "বন্যা সতর্কতা")}
+        eyebrow={tr("Real-time monitoring", "রিয়েল-টাইম পর্যবেক্ষণ")}
+        title={tr("Flood Alerts", "বন্যা সতর্কতা")}
+        description={tr(
+          "Water levels and flood warnings for every district in Bangladesh — updated as river gauges report.",
+          "বাংলাদেশের প্রতিটি জেলার পানির উচ্চতা ও বন্যা সতর্কতা—নদীর পরিমাপক কেন্দ্রের তথ্য অনুযায়ী হালনাগাদ।",
+        )}
+        statsTitle={tr("Across Bangladesh", "সারা বাংলাদেশে")}
         stats={[
-          { label: "Active alerts", value: isLoading ? undefined : alerts.length, icon: Radar },
-          { label: "Danger & critical", value: isLoading ? undefined : severeCount, icon: AlertOctagon, tone: "alert" },
-          { label: "Districts on alert", value: isLoading ? undefined : new Set(alerts.map((a) => a.districtId)).size, icon: MapPinned },
+          { label: tr("Active alerts", "সক্রিয় সতর্কতা"), value: isLoading ? undefined : num(alerts.length), icon: Radar },
+          { label: tr("Danger & critical", "বিপদ ও চরম বিপদ"), value: isLoading ? undefined : num(severeCount), icon: AlertOctagon, tone: "alert" },
+          { label: tr("Districts on alert", "সতর্কতায় জেলা"), value: isLoading ? undefined : num(new Set(alerts.map((a) => a.districtId)).size), icon: MapPinned },
           {
-            label: "Highest water level",
-            value: isLoading ? undefined : `${alerts.reduce((m, a) => Math.max(m, a.waterLevelCm ?? 0), 0)} cm`,
+            label: tr("Highest water level", "সর্বোচ্চ পানির উচ্চতা"),
+            value: isLoading ? undefined : `${num(alerts.reduce((m, a) => Math.max(m, a.waterLevelCm ?? 0), 0))} ${tr("cm", "সেমি")}`,
             icon: Droplets,
           },
         ]}
@@ -213,15 +218,20 @@ export function AlertsContent() {
               className={`inline-flex items-center gap-2 text-xs font-semibold border px-3.5 py-1.5 rounded-full capitalize ${textColors[severity]}`}
             >
               <span className={`h-1.5 w-1.5 rounded-full ${dotColors[severity]}`} />
-              {severity.toLowerCase()}
-              <strong className="font-mono">{countsBySeverity[severity]}</strong>
+              {t(`severity.${severity}`)}
+              <strong className="font-mono">{num(countsBySeverity[severity])}</strong>
             </span>
           );
         })}
       </div>
       <div className="flex items-center justify-between gap-4 pt-2 border-t border-border/40">
         <span className="text-xs font-semibold text-muted-foreground">
-          {isLoading ? "Loading alerts..." : `Showing ${filteredAlerts.length} of ${alerts.length} flood alerts`}
+          {isLoading
+            ? tr("Loading alerts...", "সতর্কতা লোড হচ্ছে...")
+            : tr(
+                `Showing ${filteredAlerts.length} of ${alerts.length} flood alerts`,
+                `${num(alerts.length)}টির মধ্যে ${num(filteredAlerts.length)}টি বন্যা সতর্কতা দেখানো হচ্ছে`,
+              )}
         </span>
         <Tabs value={activeView} onValueChange={(val) => startTransition(() => setActiveView(val as "map" | "list"))}>
           <TabsList className="grid w-40 grid-cols-2 h-10 rounded-full bg-muted p-1">
@@ -230,14 +240,14 @@ export function AlertsContent() {
               className="inline-flex items-center gap-1.5 text-xs font-semibold rounded-full data-active:bg-linear-to-br data-active:from-primary data-active:to-[color-mix(in_oklch,var(--primary),black_18%)] data-active:text-primary-foreground data-active:shadow-sm dark:data-active:border-transparent"
             >
               <Map className="h-3.5 w-3.5" />
-              Map
+              {tr("Map", "মানচিত্র")}
             </TabsTrigger>
             <TabsTrigger
               value="list"
               className="inline-flex items-center gap-1.5 text-xs font-semibold rounded-full data-active:bg-linear-to-br data-active:from-primary data-active:to-[color-mix(in_oklch,var(--primary),black_18%)] data-active:text-primary-foreground data-active:shadow-sm dark:data-active:border-transparent"
             >
               <List className="h-3.5 w-3.5" />
-              List
+              {tr("List", "তালিকা")}
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -246,7 +256,7 @@ export function AlertsContent() {
       <div className="relative min-h-100">
         {isLoading ? (
           <div className="h-87.5 overflow-hidden rounded-xl border border-border md:h-180">
-            <MapSkeleton label="Loading flood alerts…" />
+            <MapSkeleton label={tr("Loading flood alerts…", "বন্যা সতর্কতা লোড হচ্ছে…")} />
           </div>
         ) : activeView === "map" ? (
           <div className="animate-fade-in duration-200">
@@ -264,10 +274,13 @@ export function AlertsContent() {
               <div className="flex flex-col items-center justify-center p-12 text-center rounded-xl border border-dashed border-border bg-muted/10 max-w-lg mx-auto mt-8">
                 <CloudOff className="h-12 w-12 text-muted-foreground/60 shrink-0" />
                 <h3 className="text-base font-bold text-foreground mt-4">
-                  No flood alerts found
+                  {tr("No flood alerts found", "কোনো বন্যা সতর্কতা পাওয়া যায়নি")}
                 </h3>
                 <p className="text-xs text-muted-foreground/80 leading-relaxed max-w-xs mt-1">
-                  Try clearing the filters or searching a different district.
+                  {tr(
+                    "Try clearing the filters or searching a different district.",
+                    "ফিল্টার মুছে বা অন্য জেলা খুঁজে চেষ্টা করুন।",
+                  )}
                 </p>
                 <Button
                   size="sm"
@@ -275,7 +288,7 @@ export function AlertsContent() {
                   onClick={handleClearFilters}
                   className="mt-6 font-bold"
                 >
-                  Clear Active Filters
+                  {tr("Clear Active Filters", "সক্রিয় ফিল্টার মুছুন")}
                 </Button>
               </div>
             )}

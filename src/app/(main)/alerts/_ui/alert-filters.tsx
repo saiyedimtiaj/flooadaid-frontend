@@ -14,6 +14,7 @@ import {
   LocationSearchModal,
   type SelectedLocation,
 } from "@/components/map/location-search-modal";
+import { useT } from "@/lib/i18n/use-t";
 
 interface AlertFiltersProps {
   searchQuery: string;
@@ -57,6 +58,7 @@ export function AlertFilters({
   locationFilter,
   setLocationFilter,
 }: AlertFiltersProps) {
+  const { t, tr, pick } = useT();
   const { data: divisions } = useDivisions();
   const { data: districts } = useDistricts(selectedDivisionId ?? undefined);
   const [locationModalOpen, setLocationModalOpen] = useState(false);
@@ -70,7 +72,7 @@ export function AlertFilters({
               <SlidersHorizontal className="size-4" />
             </div>
             <span className="text-sm font-bold text-foreground">
-              Find Alerts Near You
+              {tr("Find Alerts Near You", "আপনার কাছের সতর্কতা খুঁজুন")}
             </span>
           </div>
           <Button
@@ -79,7 +81,7 @@ export function AlertFilters({
             className="h-9 rounded-xl gap-2 font-semibold shadow-sm"
           >
             <MapPinned className="size-4" />
-            Find on Map
+            {tr("Find on Map", "মানচিত্রে খুঁজুন")}
           </Button>
         </div>
 
@@ -95,13 +97,13 @@ export function AlertFilters({
               <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 pl-3 pr-1.5 py-1.5">
                 <MapPinned className="size-3.5 text-primary shrink-0" />
                 <span className="text-xs font-semibold text-primary truncate max-w-56">
-                  Near: {locationFilter.label?.split(",")[0] ?? "chosen location"}
+                  {tr("Near", "কাছাকাছি")}: {locationFilter.label?.split(",")[0] ?? tr("chosen location", "নির্বাচিত স্থান")}
                 </span>
                 <button
                   type="button"
                   onClick={() => setLocationFilter(null)}
                   className="flex items-center justify-center size-5 rounded-full hover:bg-primary/20 transition-colors"
-                  aria-label="Clear location"
+                  aria-label={tr("Clear location", "অবস্থান মুছুন")}
                 >
                   <X className="size-3 text-primary" />
                 </button>
@@ -112,39 +114,39 @@ export function AlertFilters({
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
           <div className="md:col-span-6 flex flex-col gap-1.5">
-            <label className="text-xs font-bold text-muted-foreground">Search</label>
+            <label className="text-xs font-bold text-muted-foreground">{tr("Search", "খুঁজুন")}</label>
             <div className="relative">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Type a district or alert name..."
+                placeholder={tr("Type a district or alert name...", "জেলা বা সতর্কতার নাম লিখুন...")}
                 className="pl-10 h-11 rounded-xl w-full focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary"
               />
             </div>
           </div>
 
           <div className="md:col-span-3 flex flex-col gap-1.5">
-            <label className="text-xs font-bold text-muted-foreground">Division</label>
+            <label className="text-xs font-bold text-muted-foreground">{tr("Division", "বিভাগ")}</label>
             <SearchableSelect
               value={selectedDivisionId ? String(selectedDivisionId) : "all"}
               onValueChange={(val) => {
                 setSelectedDivisionId(!val || val === "all" ? null : Number(val));
                 setSelectedDistrictId(null);
               }}
-              options={[{ value: "all", label: "All Divisions" }, ...(divisions ?? []).map((d) => ({ value: String(d.id), label: d.nameEn, keywords: d.nameBn }))]}
-              searchPlaceholder="Search division…"
+              options={[{ value: "all", label: tr("All Divisions", "সব বিভাগ") }, ...(divisions ?? []).map((d) => ({ value: String(d.id), label: pick(d.nameEn, d.nameBn), keywords: `${d.nameEn} ${d.nameBn}` }))]}
+              searchPlaceholder={tr("Search division…", "বিভাগ খুঁজুন…")}
             />
           </div>
 
           <div className="md:col-span-3 flex flex-col gap-1.5">
-            <label className="text-xs font-bold text-muted-foreground">District</label>
+            <label className="text-xs font-bold text-muted-foreground">{tr("District", "জেলা")}</label>
             <SearchableSelect
               value={selectedDistrictId ? String(selectedDistrictId) : "all"}
               onValueChange={(val) => setSelectedDistrictId(!val || val === "all" ? null : Number(val))}
               disabled={!selectedDivisionId}
-              options={[{ value: "all", label: "All Districts" }, ...(districts ?? []).map((d) => ({ value: String(d.id), label: d.nameEn, keywords: d.nameBn }))]}
-              searchPlaceholder="Search district…"
+              options={[{ value: "all", label: tr("All Districts", "সব জেলা") }, ...(districts ?? []).map((d) => ({ value: String(d.id), label: pick(d.nameEn, d.nameBn), keywords: `${d.nameEn} ${d.nameBn}` }))]}
+              searchPlaceholder={tr("Search district…", "জেলা খুঁজুন…")}
             />
           </div>
         </div>
@@ -152,7 +154,7 @@ export function AlertFilters({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 border-t border-border/60">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs font-bold text-muted-foreground mr-1 w-full sm:w-auto">
-              Severity:
+              {tr("Severity", "বিপদমাত্রা")}:
             </span>
             {ALERT_SEVERITIES.map((severity) => {
               const isActive = selectedSeverities.includes(severity);
@@ -164,7 +166,7 @@ export function AlertFilters({
                   onClick={() => toggleSeverity(severity)}
                   className={`px-3.5 py-2 rounded-full text-xs font-bold border transition-colors duration-200 capitalize select-none cursor-pointer ${severityPillStyles[severity]}`}
                 >
-                  {severity.toLowerCase()}
+                  {t(`severity.${severity}`)}
                 </motion.button>
               );
             })}
@@ -178,7 +180,7 @@ export function AlertFilters({
               className="text-xs font-bold text-muted-foreground hover:text-foreground shrink-0 h-8 self-end sm:self-auto"
             >
               <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
-              Clear Filters
+              {tr("Clear Filters", "ফিল্টার মুছুন")}
             </Button>
           )}
         </div>
@@ -188,8 +190,11 @@ export function AlertFilters({
         open={locationModalOpen}
         onOpenChange={setLocationModalOpen}
         onSelect={setLocationFilter}
-        title="Find alerts near a location"
-        description="Search a place, tap the map, or use your current location to see the nearest flood alerts."
+        title={tr("Find alerts near a location", "কোনো স্থানের কাছের সতর্কতা খুঁজুন")}
+        description={tr(
+          "Search a place, tap the map, or use your current location to see the nearest flood alerts.",
+          "কাছের বন্যা সতর্কতা দেখতে স্থান খুঁজুন, মানচিত্রে চাপুন অথবা বর্তমান অবস্থান ব্যবহার করুন।",
+        )}
       />
     </Card>
   );

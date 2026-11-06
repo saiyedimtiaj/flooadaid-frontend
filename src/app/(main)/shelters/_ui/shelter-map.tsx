@@ -17,6 +17,7 @@ import { toast } from "sonner";
 
 import "leaflet/dist/leaflet.css";
 import type { Shelter } from "@/lib/types/api";
+import { useT } from "@/lib/i18n/use-t";
 
 interface ShelterMapInnerProps {
   shelters: Shelter[];
@@ -82,6 +83,7 @@ export default function ShelterMapInner({
   userLocation,
   setUserLocation,
 }: ShelterMapInnerProps) {
+  const { tr, pick, num } = useT();
   const [isLocating, setIsLocating] = useState(false);
   const [shouldFlyToUser, setShouldFlyToUser] = useState(false);
   const markerRefs = useRef<Record<string, LeafletCircleMarker>>({});
@@ -97,8 +99,8 @@ export default function ShelterMapInner({
 
   const handleLocateMe = () => {
     if (!navigator.geolocation) {
-      toast.error("Not Supported", {
-        description: "Geolocation is not supported by your browser.",
+      toast.error(tr("Not Supported", "সমর্থিত নয়"), {
+        description: tr("Geolocation is not supported by your browser.", "আপনার ব্রাউজারে অবস্থান শনাক্তকরণ সমর্থিত নয়।"),
       });
       return;
     }
@@ -116,9 +118,11 @@ export default function ShelterMapInner({
       },
       () => {
         setIsLocating(false);
-        toast.error("Location Access Denied", {
-          description:
+        toast.error(tr("Location Access Denied", "অবস্থান ব্যবহারের অনুমতি নেই"), {
+          description: tr(
             "Could not access your location. Please check your system preferences.",
+            "আপনার অবস্থান পাওয়া যায়নি। ডিভাইসের অনুমতি সেটিংস পরীক্ষা করুন।",
+          ),
         });
       },
       { enableHighAccuracy: true, timeout: 10000 },
@@ -218,7 +222,7 @@ export default function ShelterMapInner({
                     }}
                     className="truncate"
                   >
-                    {shelter.name}
+                    {pick(shelter.name, shelter.nameBn)}
                   </div>
                   <div
                     style={{
@@ -260,9 +264,9 @@ export default function ShelterMapInner({
                     }}
                   >
                     <span>
-                      {shelter.currentOccupancy} / {shelter.capacity}
+                      {num(shelter.currentOccupancy)} / {num(shelter.capacity)}
                     </span>
-                    <span>{occupancyPercent}%</span>
+                    <span>{num(occupancyPercent)}%</span>
                   </div>
 
                   <div
@@ -281,7 +285,7 @@ export default function ShelterMapInner({
                           : "hsl(var(--muted-foreground)/0.3)",
                       }}
                     >
-                      {shelter.hasFood ? "✓ Food" : "✗ Food"}
+                      {shelter.hasFood ? `✓ ${tr("Food", "খাবার")}` : `✗ ${tr("Food", "খাবার")}`}
                     </span>
                     <span
                       style={{
@@ -290,7 +294,7 @@ export default function ShelterMapInner({
                           : "hsl(var(--muted-foreground)/0.3)",
                       }}
                     >
-                      {shelter.hasWater ? "✓ Water" : "✗ Water"}
+                      {shelter.hasWater ? `✓ ${tr("Water", "পানি")}` : `✗ ${tr("Water", "পানি")}`}
                     </span>
                     <span
                       style={{
@@ -299,7 +303,7 @@ export default function ShelterMapInner({
                           : "hsl(var(--muted-foreground)/0.3)",
                       }}
                     >
-                      {shelter.hasMedical ? "✓ Med" : "✗ Med"}
+                      {shelter.hasMedical ? `✓ ${tr("Med", "চিকিৎসা")}` : `✗ ${tr("Med", "চিকিৎসা")}`}
                     </span>
                   </div>
 
@@ -322,7 +326,7 @@ export default function ShelterMapInner({
                         textDecoration: "none",
                       }}
                     >
-                      Directions
+                      {tr("Directions", "দিকনির্দেশনা")}
                     </a>
                     {shelter.contactPhone && (
                       <a
@@ -334,7 +338,7 @@ export default function ShelterMapInner({
                           textDecoration: "none",
                         }}
                       >
-                        Call
+                        {tr("Call", "কল করুন")}
                       </a>
                     )}
                   </div>
@@ -355,6 +359,7 @@ export default function ShelterMapInner({
           onClick={handleLocateMe}
           disabled={isLocating}
           size="icon"
+          aria-label={tr("Use my location", "আমার অবস্থান ব্যবহার করুন")}
           className="size-9 rounded-lg bg-background hover:bg-muted text-foreground border border-border shadow-sm"
         >
           {isLocating ? (
@@ -372,20 +377,20 @@ export default function ShelterMapInner({
         className="absolute bottom-6 right-4 z-500 bg-background/90 backdrop-blur-sm rounded-lg p-2.5 shadow-sm border border-border flex flex-col gap-1.5 min-w-27.5"
       >
         <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Capacity
+          {tr("Capacity", "ধারণক্ষমতা")}
         </span>
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-1.5 text-[11px] text-foreground">
             <span className="size-2 rounded-full bg-[#22C55E]" />
-            <span>Available</span>
+            <span>{tr("Available", "জায়গা আছে")}</span>
           </div>
           <div className="flex items-center gap-1.5 text-[11px] text-foreground">
             <span className="size-2 rounded-full bg-[#F59E0B]" />
-            <span>Filling up</span>
+            <span>{tr("Filling up", "দ্রুত পূর্ণ হচ্ছে")}</span>
           </div>
           <div className="flex items-center gap-1.5 text-[11px] text-foreground">
             <span className="size-2 rounded-full bg-[#EF4444]" />
-            <span>Nearly full</span>
+            <span>{tr("Nearly full", "প্রায় পূর্ণ")}</span>
           </div>
         </div>
       </motion.div>

@@ -44,7 +44,7 @@ const subscribe = (cb: () => void) => {
 const snapshot = () => readMySosIds().join(",");
 
 export function MySosRequests({ className, compact = false }: { className?: string; compact?: boolean }) {
-  const { t } = useT();
+  const { t, lang } = useT();
   const router = useRouter();
   const { data: user } = useCurrentUser();
   const { data: mine, isLoading: mineLoading } = useMySosRequests(!!user);
@@ -137,7 +137,7 @@ export function MySosRequests({ className, compact = false }: { className?: stri
                   </span>
                   <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                     <Clock className="h-3 w-3" />
-                    {timeAgo(r.createdAt)}
+                    {timeAgo(r.createdAt, lang)}
                   </span>
                 </div>
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-foreground">

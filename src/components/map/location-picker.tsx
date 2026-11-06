@@ -8,15 +8,21 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { LatLng } from "./location-picker-map";
+import { useT } from "@/lib/i18n/use-t";
+
+function MapLoading() {
+  const { tr } = useT();
+  return (
+    <Skeleton className="w-full h-full flex items-center justify-center bg-muted/40 gap-2">
+      <MapPin className="size-5 animate-bounce text-muted-foreground" />
+      <span className="text-xs font-semibold text-muted-foreground">{tr("Loading map…", "মানচিত্র লোড হচ্ছে…")}</span>
+    </Skeleton>
+  );
+}
 
 const DynamicMap = dynamic(() => import("./location-picker-map"), {
   ssr: false,
-  loading: () => (
-    <Skeleton className="w-full h-full flex items-center justify-center bg-muted/40 gap-2">
-      <MapPin className="size-5 animate-bounce text-muted-foreground" />
-      <span className="text-xs font-semibold text-muted-foreground">Loading map…</span>
-    </Skeleton>
-  ),
+  loading: () => <MapLoading />,
 });
 
 type DetectState = "idle" | "detecting" | "success" | "error";
@@ -40,11 +46,12 @@ export function LocationPicker({
   heightClass = "h-72",
   className,
 }: LocationPickerProps) {
+  const { tr, num } = useT();
   const [detectState, setDetectState] = useState<DetectState>("idle");
 
   const detect = () => {
     if (!navigator.geolocation) {
-      toast.error("Location not supported on this device");
+      toast.error(tr("Location not supported on this device", "এই ডিভাইসে অবস্থান শনাক্তকরণ সমর্থিত নয়"));
       return;
     }
     setDetectState("detecting");
@@ -52,13 +59,13 @@ export function LocationPicker({
       (pos) => {
         onChange({ lat: pos.coords.latitude, lng: pos.coords.longitude });
         setDetectState("success");
-        toast.success("Location found");
+        toast.success(tr("Location found", "অবস্থান পাওয়া গেছে"));
         setTimeout(() => setDetectState("idle"), 1500);
       },
       () => {
         setDetectState("error");
-        toast.error("Could not find your location", {
-          description: "Please allow location access, or tap the map.",
+        toast.error(tr("Could not find your location", "আপনার অবস্থান পাওয়া যায়নি"), {
+          description: tr("Please allow location access, or tap the map.", "অবস্থানের অনুমতি দিন অথবা মানচিত্রে চাপুন।"),
         });
         setTimeout(() => setDetectState("idle"), 2000);
       },
@@ -92,22 +99,22 @@ export function LocationPicker({
                 >
                   {detectState === "detecting" && (
                     <>
-                      <Loader2 className="size-3.5 animate-spin" /> Finding you…
+                      <Loader2 className="size-3.5 animate-spin" /> {tr("Finding you…", "আপনার অবস্থান খোঁজা হচ্ছে…")}
                     </>
                   )}
                   {detectState === "success" && (
                     <>
-                      <CheckCircle className="size-3.5" /> Location found
+                      <CheckCircle className="size-3.5" /> {tr("Location found", "অবস্থান পাওয়া গেছে")}
                     </>
                   )}
                   {detectState === "error" && (
                     <>
-                      <XCircle className="size-3.5" /> Try again
+                      <XCircle className="size-3.5" /> {tr("Try again", "আবার চেষ্টা করুন")}
                     </>
                   )}
                   {detectState === "idle" && (
                     <>
-                      <Crosshair className="size-3.5" /> Use My Current Location
+                      <Crosshair className="size-3.5" /> {tr("Use My Current Location", "আমার বর্তমান অবস্থান ব্যবহার করুন")}
                     </>
                   )}
                 </motion.span>
@@ -121,15 +128,15 @@ export function LocationPicker({
         {value ? (
           <div className="flex items-center gap-2 text-xs">
             <CheckCircle className="size-4 text-emerald-500 shrink-0" />
-            <span className="font-semibold text-foreground">Location set:</span>
+            <span className="font-semibold text-foreground">{tr("Location set", "অবস্থান নির্ধারিত")}:</span>
             <span className="font-mono text-muted-foreground">
-              {value.lat.toFixed(5)}, {value.lng.toFixed(5)}
+              {num(value.lat.toFixed(5))}, {num(value.lng.toFixed(5))}
             </span>
           </div>
         ) : (
           <p className="text-xs text-muted-foreground flex items-center gap-1.5">
             <MapPin className="size-4 text-amber-500 shrink-0" />
-            Tap the map or use the button to set the location.
+            {tr("Tap the map or use the button to set the location.", "অবস্থান নির্ধারণ করতে মানচিত্রে চাপুন বা বোতামটি ব্যবহার করুন।")}
           </p>
         )}
       </div>

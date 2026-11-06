@@ -12,6 +12,7 @@ import { MapSkeleton } from "@/components/ui/map-skeleton"
 import { Skeleton } from "@/components/ui/skeleton"
 import type { Shelter } from "@/lib/types/api"
 import type { SelectedLocation } from "@/components/map/location-search-modal"
+import { useT } from "@/lib/i18n/use-t"
 
 const FACILITY_KEY_MAP: Record<string, keyof Shelter> = {
   food: "hasFood",
@@ -30,6 +31,7 @@ function locationFromParams(params: URLSearchParams): SelectedLocation | null {
 }
 
 export default function SheltersContent() {
+  const { tr } = useT()
   const searchParams = useSearchParams()
   const [initialLocation] = useState(() => locationFromParams(searchParams))
   const [selectedShelterId, setSelectedShelterId] = useState<string | null>(null)
@@ -127,7 +129,7 @@ export default function SheltersContent() {
       {isLoading ? (
         <div className="grid grid-cols-1 gap-4 md:h-[calc(100vh-220px)] md:min-h-100 md:grid-cols-[1.4fr_1fr]">
           <div className="h-87.5 overflow-hidden rounded-xl border border-border md:h-full">
-            <MapSkeleton label="Finding shelters…" />
+            <MapSkeleton label={tr("Finding shelters…", "আশ্রয়কেন্দ্র খোঁজা হচ্ছে…")} />
           </div>
           <div className="flex flex-col gap-3">
             {Array.from({ length: 4 }).map((_, i) => (

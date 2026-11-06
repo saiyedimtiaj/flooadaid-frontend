@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import { ChevronRight } from "lucide-react";
+import { useT } from "@/lib/i18n/use-t";
 
 interface PublicHeroProps {
   eyebrow: string;
@@ -20,6 +21,7 @@ interface PublicHeroProps {
  * gradient + eyebrow language of the alerts/shelters page headers.
  */
 export function PublicHero({ eyebrow, icon: Icon, title, description, breadcrumb }: PublicHeroProps) {
+  const { t } = useT();
   return (
     <section className="relative overflow-hidden bg-night text-white pt-32 pb-24 md:pb-28">
       <div className="absolute inset-0 bg-dots opacity-30" aria-hidden="true" />
@@ -43,7 +45,7 @@ export function PublicHero({ eyebrow, icon: Icon, title, description, breadcrumb
           className="flex flex-col items-start"
         >
           <div className="flex items-center gap-1 text-xs font-semibold text-white/60 select-none mb-6">
-            <Link href="/" className="hover:text-white transition-colors">Home</Link>
+            <Link href="/" className="hover:text-white transition-colors">{t("nav.home")}</Link>
             <ChevronRight className="h-3 w-3" />
             <span className="text-white">{breadcrumb ?? eyebrow}</span>
           </div>

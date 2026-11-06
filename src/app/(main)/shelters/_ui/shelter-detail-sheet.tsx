@@ -35,30 +35,35 @@ const facilityMeta = [
   {
     key: "hasFood" as const,
     label: "Food",
+    labelBn: "খাবার",
     icon: UtensilsCrossed,
     bg: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20",
   },
   {
     key: "hasWater" as const,
     label: "Water",
+    labelBn: "পানি",
     icon: Droplets,
     bg: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20",
   },
   {
     key: "hasMedical" as const,
     label: "Medical",
+    labelBn: "চিকিৎসা",
     icon: Cross,
     bg: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20",
   },
   {
     key: "hasElectricity" as const,
     label: "Power",
+    labelBn: "বিদ্যুৎ",
     icon: Zap,
     bg: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20",
   },
   {
     key: "hasToilet" as const,
     label: "Toilet",
+    labelBn: "শৌচাগার",
     icon: ShowerHead,
     bg: "bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20",
   },
@@ -69,7 +74,7 @@ export default function ShelterDetailSheet({
   isOpen,
   onClose,
 }: ShelterDetailSheetProps) {
-  const { pick } = useT();
+  const { tr, pick, num } = useT();
   const occupancyPercent = shelter
     ? Math.round((shelter.currentOccupancy / shelter.capacity) * 100)
     : 0;
@@ -112,10 +117,10 @@ export default function ShelterDetailSheet({
               <div>
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                    Capacity
+                    {tr("Capacity", "ধারণক্ষমতা")}
                   </span>
                   <span className="font-semibold text-foreground tabular-nums">
-                    {shelter.currentOccupancy} / {shelter.capacity}
+                    {num(shelter.currentOccupancy)} / {num(shelter.capacity)}
                   </span>
                 </div>
                 <div className="relative mt-1.5 h-2 w-full rounded-full bg-muted overflow-hidden">
@@ -129,14 +134,14 @@ export default function ShelterDetailSheet({
                 </div>
                 <div className="flex justify-end mt-1">
                   <span className="text-[10px] text-muted-foreground font-medium">
-                    {occupancyPercent}% occupied
+                    {num(occupancyPercent)}% {tr("occupied", "পূর্ণ")}
                   </span>
                 </div>
               </div>
 
               <div className="flex flex-col gap-2">
                 <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                  Facilities
+                  {tr("Facilities", "সুবিধাসমূহ")}
                 </span>
                 <div className="flex flex-wrap gap-1.5">
                   {facilityMeta.map((facility) => {
@@ -153,7 +158,7 @@ export default function ShelterDetailSheet({
                         )}
                       >
                         <Icon className="size-3" />
-                        <span>{facility.label}</span>
+                        <span>{tr(facility.label, facility.labelBn)}</span>
                       </div>
                     );
                   })}
@@ -163,7 +168,7 @@ export default function ShelterDetailSheet({
               {(shelter.contactName || shelter.contactPhone) && (
                 <div className="flex flex-col gap-1.5 rounded-lg border border-border p-3">
                   <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                    Contact
+                    {tr("Contact", "যোগাযোগ")}
                   </span>
                   {shelter.contactName && (
                     <div className="flex items-center gap-1.5 text-sm text-foreground">
@@ -188,14 +193,14 @@ export default function ShelterDetailSheet({
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-1.5" />}>
                   <Navigation className="size-3.5" />
-                  Directions
+                  {tr("Directions", "দিকনির্দেশনা")}
                 </Button>
               {shelter.contactPhone && (
                 <Button size="sm" className="flex-1 gap-1.5" nativeButton={false} render={<a
                     href={`tel:${shelter.contactPhone}`}
                     className="flex items-center justify-center gap-1.5" />}>
                     <Phone className="size-3.5" />
-                    Call
+                    {tr("Call", "কল করুন")}
                   </Button>
               )}
             </SheetFooter>
