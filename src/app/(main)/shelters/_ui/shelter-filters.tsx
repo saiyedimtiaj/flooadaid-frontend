@@ -1,5 +1,6 @@
 "use client";
 
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -17,13 +18,6 @@ import {
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useDistricts } from "@/lib/hooks/use-locations";
 import {
@@ -120,32 +114,14 @@ export default function ShelterFilters({
               className="pl-10 h-11 rounded-xl text-sm transition-colors focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary"
             />
           </div>
-          <Select
+          <SearchableSelect
+            className="w-full md:w-56"
+            icon={<MapPin />}
             value={selectedDistrictId ? String(selectedDistrictId) : "all"}
-            onValueChange={(val) => setSelectedDistrictId(val === "all" ? null : Number(val))}
-          >
-            <SelectTrigger className="w-full md:w-52 data-[size=default]:h-11 rounded-xl">
-              <div className="flex items-center gap-2">
-                <MapPin className="size-4 text-muted-foreground" />
-                <SelectValue placeholder="All Districts">
-                  {(val: string) =>
-                    val === "all" || !val
-                      ? "All Districts"
-                      : (districts?.find((d) => String(d.id) === val)?.nameEn ??
-                        "All Districts")
-                  }
-                </SelectValue>
-              </div>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Districts</SelectItem>
-              {districts?.map((district) => (
-                <SelectItem key={district.id} value={String(district.id)}>
-                  {district.nameEn}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            onValueChange={(val) => setSelectedDistrictId(!val || val === "all" ? null : Number(val))}
+            options={[{ value: "all", label: "All Districts" }, ...(districts ?? []).map((d) => ({ value: String(d.id), label: d.nameEn, keywords: d.nameBn }))]}
+            searchPlaceholder="Search district…"
+          />
 
           <Button
             type="button"

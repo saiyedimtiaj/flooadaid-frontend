@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { api, ApiError } from "@/lib/api-client";
 import type {
@@ -77,15 +77,29 @@ export function useCancelOwnSos() {
   });
 }
 
-export function useSosRequests(params: { status?: SosStatus; limit?: number } = {}) {
+export interface SosQueryParams {
+  status?: SosStatus;
+  priority?: SosRequest["priority"];
+  districtId?: number;
+  q?: string;
+  page?: number;
+  limit?: number;
+}
+
+export function useSosRequests(params: SosQueryParams = {}) {
   const qs = new URLSearchParams();
   if (params.status) qs.set("status", params.status);
+  if (params.priority) qs.set("priority", params.priority);
+  if (params.districtId) qs.set("districtId", String(params.districtId));
+  if (params.q?.trim()) qs.set("q", params.q.trim());
+  if (params.page) qs.set("page", String(params.page));
   if (params.limit) qs.set("limit", String(params.limit));
 
   return useQuery({
     queryKey: ["sos", params],
     queryFn: () => api.get<Paginated<SosRequest>>(`/sos?${qs.toString()}`),
     refetchInterval: 15_000,
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -124,5 +138,39 @@ export function useAssignSos() {
       toast.success("Volunteer assigned");
     },
     onError: (error) => toast.error(error instanceof ApiError ? error.message : "Failed to assign volunteer"),
+  });
+}
+
+export interface SosStatsSummary {
+  total: number;
+  byStatus: Partial<Record<SosStatus, number>>;
+  byPriority: Partial<Record<SosRequest["priority"], number>>;
+}
+
+export function useSosStatsSummary() {
+  return useQuery({
+    queryKey: ["sos", "stats"],
+    queryFn: () => api.get<SosStatsSummary>("/sos/stats"),
+    refetchInterval: 15_000,
+  });
+}
+
+export function useMySosRequests(enabled: boolean) {
+  return useQuery({
+    queryKey: ["sos", "mine"],
+    queryFn: () => api.get<SosRequest[]>("/sos/mine"),
+    enabled,
+    refetchInterval: 15_000,
+  });
+}
+
+export function useTrackMany(ids: string[]) {
+  return useQueries({
+    queries: ids.map((id) => ({
+      queryKey: ["sos-tracking", id],
+      queryFn: () => api.get<SosTracking>(`/sos/${id}`),
+      refetchInterval: 15_000,
+      retry: false,
+    })),
   });
 }

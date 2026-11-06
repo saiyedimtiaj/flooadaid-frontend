@@ -1,9 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
+import { Pagination } from "@/components/dashboard/pagination";
+import { FilterSelect, SearchInput, usePaged } from "@/components/dashboard/list-toolbar";
 import { Send, Users, Truck, Package, Loader2, Undo2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,13 +21,6 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   useReliefStock,
   useReliefAssignments,
@@ -82,26 +78,18 @@ function AssignDialog({
           <DialogTitle>Assign Relief</DialogTitle>
           <DialogDescription>Give relief from the store to a volunteer.</DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <div data-slot="modal-body" className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
             <Label>Item from store</Label>
-            <Select value={item} onValueChange={(v) => setValue("item", (v as string) ?? "")}>
-              <SelectTrigger className="w-full rounded-lg">
-                <SelectValue placeholder="Select item...">
-                  {(v: string) => {
-                    const s = stock?.find((x) => x.item === v);
-                    return s ? `${s.item} (${s.quantity} ${s.unit} left)` : "Select item...";
-                  }}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {stock?.map((s) => (
-                  <SelectItem key={s.id} value={s.item} disabled={s.quantity <= 0}>
-                    {s.item} ({s.quantity} {s.unit})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SearchableSelect
+              value={item ?? ""}
+              onValueChange={(v) => setValue("item", v)}
+              options={(stock ?? []).filter((s) => s.quantity > 0).map((s) => ({ value: s.item, label: s.item, description: `${s.quantity} ${s.unit} in store` }))}
+              placeholder="Select item..."
+              searchPlaceholder="Search store items…"
+              emptyText="No items in stock"
+            />
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -111,20 +99,14 @@ function AssignDialog({
 
           <div className="flex flex-col gap-1.5">
             <Label>Volunteer</Label>
-            <Select value={volunteerId} onValueChange={(v) => setValue("volunteerId", (v as string) ?? "")}>
-              <SelectTrigger className="w-full rounded-lg">
-                <SelectValue placeholder="Select volunteer...">
-                  {(v: string) => volunteers.find((x) => x.id === v)?.name ?? "Select volunteer..."}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {volunteers.map((v) => (
-                  <SelectItem key={v.id} value={v.id}>
-                    {v.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SearchableSelect
+              value={volunteerId ?? ""}
+              onValueChange={(v) => setValue("volunteerId", v)}
+              options={volunteers.map((v) => ({ value: v.id, label: v.name }))}
+              placeholder="Select volunteer..."
+              searchPlaceholder="Search volunteers…"
+              emptyText="No verified volunteers available"
+            />
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -132,6 +114,7 @@ function AssignDialog({
             <Input {...register("note")} placeholder="For Feni shelter drop-off" />
           </div>
 
+          </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="font-semibold">
               Cancel
@@ -153,6 +136,16 @@ function AssignDialog({
 
 export function ReliefAssignmentsView() {
   const { data: assignments, isLoading } = useReliefAssignments();
+  const [ledgerStatus, setLedgerStatus] = useState("");
+  const [ledgerSearch, setLedgerSearch] = useState("");
+  const ledger = useMemo(() => {
+    const q = ledgerSearch.trim().toLowerCase();
+    return (assignments ?? []).filter((a) => {
+      if (ledgerStatus && a.status !== ledgerStatus) return false;
+      return !q || `${a.item} ${a.volunteer?.name ?? ""} ${a.shelter?.name ?? ""}`.toLowerCase().includes(q);
+    });
+  }, [assignments, ledgerStatus, ledgerSearch]);
+  const ledgerPage = usePaged(ledger, 8, `${ledgerStatus}|${ledgerSearch}`);
   const { data: holdings } = useReliefHoldings();
   const cancelAssignment = useCancelAssignment();
   const [assignOpen, setAssignOpen] = useState(false);
@@ -211,11 +204,28 @@ export function ReliefAssignmentsView() {
           )}
         </Card>
 
-        {/* Assignment ledger */}
-        <Card className="rounded-3xl border border-border bg-card p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Truck className="size-4 text-primary" />
-            <h3 className="text-sm font-bold text-foreground">Assignment Ledger</h3>
+        <Card className="rounded-2xl p-6">
+          <div className="mb-4 flex flex-col gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-lime">
+                <Truck className="h-5 w-5" />
+              </div>
+              <h3 className="text-base font-bold text-foreground">Assignment ledger</h3>
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <SearchInput value={ledgerSearch} onChange={setLedgerSearch} placeholder="Item, volunteer or shelter…" />
+              <FilterSelect
+                value={ledgerStatus}
+                onChange={setLedgerStatus}
+                allLabel="All statuses"
+                options={[
+                  { value: "ASSIGNED", label: "Holding" },
+                  { value: "DELIVERED", label: "Delivered" },
+                  { value: "CANCELLED", label: "Cancelled" },
+                ]}
+                className="sm:w-40"
+              />
+            </div>
           </div>
           {isLoading ? (
             <div className="space-y-2">
@@ -223,9 +233,9 @@ export function ReliefAssignmentsView() {
                 <Skeleton key={i} className="h-10 w-full" />
               ))}
             </div>
-          ) : assignments && assignments.length > 0 ? (
+          ) : ledgerPage.pageItems.length > 0 ? (
             <div className="flex flex-col divide-y divide-border">
-              {assignments.map((a) => (
+              {ledgerPage.pageItems.map((a) => (
                 <div key={a.id} className="flex items-center justify-between gap-3 py-3">
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-foreground truncate">
@@ -264,7 +274,17 @@ export function ReliefAssignmentsView() {
               ))}
             </div>
           ) : (
-            <EmptyState icon={Truck} title="No assignments yet" />
+            <EmptyState icon={Truck} title={ledgerSearch || ledgerStatus ? "No assignments match" : "No assignments yet"} />
+          )}
+          {ledgerPage.total > 0 && (
+            <Pagination
+              className="mt-4 border-t border-border pt-4"
+              page={ledgerPage.page}
+              totalPages={ledgerPage.totalPages}
+              total={ledgerPage.total}
+              pageSize={8}
+              onChange={ledgerPage.setPage}
+            />
           )}
         </Card>
       </div>

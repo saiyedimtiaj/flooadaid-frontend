@@ -1,5 +1,6 @@
 "use client";
 
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useState } from "react";
 import { Loader2, PackagePlus, Plus, Send, Trash2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -8,13 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import {
@@ -63,38 +57,22 @@ function RequestForm({ onDone }: { onDone: () => void }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="flex flex-col gap-1.5">
           <Label>Shelter</Label>
-          <Select value={shelterId} onValueChange={(v) => setShelterId((v as string) ?? "")}>
-            <SelectTrigger className="w-full rounded-lg">
-              <SelectValue placeholder="Which shelter needs supplies?">
-                {(v: string) => {
-                  const s = shelters?.data.find((x) => x.id === v);
-                  return s ? `${s.name} · ${s.district.nameEn}` : "Which shelter needs supplies?";
-                }}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {shelters?.data.map((s) => (
-                <SelectItem key={s.id} value={s.id}>
-                  {s.name} · {s.district.nameEn} ({s.currentOccupancy}/{s.capacity})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <SearchableSelect
+            value={shelterId}
+            onValueChange={setShelterId}
+            options={(shelters?.data ?? []).map((s) => ({ value: s.id, label: s.name, description: `${s.district.nameEn} · ${s.currentOccupancy}/${s.capacity} people`, keywords: s.district.nameEn }))}
+            placeholder="Which shelter needs supplies?"
+            searchPlaceholder="Search shelter or district…"
+          />
         </div>
         <div className="flex flex-col gap-1.5">
           <Label>Urgency</Label>
-          <Select value={urgency} onValueChange={(v) => v && setUrgency(v as SupplyUrgency)}>
-            <SelectTrigger className="w-full rounded-lg">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {URGENCIES.map((u) => (
-                <SelectItem key={u} value={u}>
-                  {u}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <SearchableSelect
+            value={urgency}
+            onValueChange={(v) => v && setUrgency(v as SupplyUrgency)}
+            options={URGENCIES.map((u) => ({ value: u, label: u.charAt(0) + u.slice(1).toLowerCase() }))}
+            searchPlaceholder="Search urgency…"
+          />
         </div>
       </div>
 
@@ -102,25 +80,14 @@ function RequestForm({ onDone }: { onDone: () => void }) {
         <Label>Items needed</Label>
         {lines.map((line, i) => (
           <div key={i} className="flex gap-2">
-            <Select
+            <SearchableSelect
+              className="flex-1"
               value={line.item}
-              onValueChange={(v) =>
-                setLines((ls) => ls.map((l, j) => (j === i ? { ...l, item: (v as string) ?? "" } : l)))
-              }
-            >
-              <SelectTrigger className="flex-1 rounded-lg">
-                <SelectValue placeholder="Item from the relief store">
-                  {(v: string) => v || "Item from the relief store"}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {stock?.map((s) => (
-                  <SelectItem key={s.id} value={s.item}>
-                    {s.item} ({s.quantity} {s.unit} in store)
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              onValueChange={(v) => setLines((ls) => ls.map((l, j) => (j === i ? { ...l, item: v } : l)))}
+              options={(stock ?? []).map((s) => ({ value: s.item, label: s.item, description: `${s.quantity} ${s.unit} in store` }))}
+              placeholder="Item from the relief store"
+              searchPlaceholder="Search items…"
+            />
             <Input
               type="number"
               min={1}

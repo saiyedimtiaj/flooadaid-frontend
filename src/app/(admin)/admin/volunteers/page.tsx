@@ -9,6 +9,7 @@ import { ConfirmDialog } from "@/components/ui/alert-dialog";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { DataTable, type Column } from "@/components/dashboard/data-table";
+import { DistrictFilter, FilterSelect, SearchInput } from "@/components/dashboard/list-toolbar";
 import { useVerifyVolunteer, useVolunteers } from "@/lib/hooks/use-volunteers";
 import type { VolunteerProfile } from "@/lib/types/api";
 
@@ -26,6 +27,19 @@ export default function AdminVolunteersPage() {
   const { data: volunteers, isLoading } = useVolunteers();
   const verify = useVerifyVolunteer();
   const [toVerify, setToVerify] = useState<VolunteerProfile | null>(null);
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("");
+  const [district, setDistrict] = useState("");
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return (volunteers ?? []).filter((v) => {
+      if (status === "verified" && !v.verified) return false;
+      if (status === "pending" && v.verified) return false;
+      if (status === "available" && !v.isAvailable) return false;
+      if (district && String(v.districtId) !== district) return false;
+      return !q || `${v.user?.name ?? ""} ${v.user?.email ?? ""} ${v.skills.join(" ")}`.toLowerCase().includes(q);
+    });
+  }, [volunteers, search, status, district]);
 
   const stats = useMemo(() => {
     const list = volunteers ?? [];
@@ -141,17 +155,34 @@ export default function AdminVolunteersPage() {
         description="Verify registered volunteers and review their assignment history"
       />
 
-      <div className="grid grid-cols-3 gap-4">
-        <StatCard label="Total Volunteers" value={stats.total} icon={Users} tint="primary" isLoading={isLoading} />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <StatCard label="Total Volunteers" value={stats.total} icon={Users} tint="primary" isLoading={isLoading} highlight />
         <StatCard label="Verified" value={stats.verified} icon={UserCheck} tint="success" isLoading={isLoading} />
         <StatCard label="Available Now" value={stats.available} icon={CircleCheck} tint="teal" isLoading={isLoading} />
       </div>
 
       <DataTable
         columns={columns}
-        data={volunteers}
+        data={filtered}
         isLoading={isLoading}
         getRowKey={(v) => v.id}
+        resetKey={`${search}|${status}|${district}`}
+        toolbar={
+          <>
+            <SearchInput value={search} onChange={setSearch} placeholder="Search name, email or skill…" className="lg:max-w-sm" />
+            <FilterSelect
+              value={status}
+              onChange={setStatus}
+              allLabel="All volunteers"
+              options={[
+                { value: "verified", label: "Verified" },
+                { value: "pending", label: "Awaiting verification" },
+                { value: "available", label: "Available now" },
+              ]}
+            />
+            <DistrictFilter value={district} onChange={setDistrict} />
+          </>
+        }
         emptyIcon={Users}
         emptyTitle="No volunteers registered yet"
         emptyDescription="Volunteers who sign up will appear here for verification."

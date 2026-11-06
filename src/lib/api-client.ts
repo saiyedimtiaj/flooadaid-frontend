@@ -25,8 +25,11 @@ async function request<T>(
   const body = isJson ? await res.json() : undefined;
 
   if (!res.ok) {
+    const raw = body?.message;
     const message =
-      (body && (body.message?.[0] ?? body.message)) || res.statusText;
+      (Array.isArray(raw) ? raw[0] : typeof raw === "string" ? raw : undefined) ||
+      res.statusText ||
+      "Request failed";
     throw new ApiError(message, res.status);
   }
 

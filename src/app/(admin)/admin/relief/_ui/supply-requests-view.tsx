@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Check, Loader2, PackagePlus, X } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,13 +17,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import {
   DispatchList,
@@ -39,6 +33,8 @@ import {
 } from "@/lib/hooks/use-supply-requests";
 import type { SupplyRequest, SupplyRequestStatus } from "@/lib/types/api";
 import { cn } from "@/lib/utils";
+import { Pagination } from "@/components/dashboard/pagination";
+import { SearchInput, usePaged } from "@/components/dashboard/list-toolbar";
 
 const FILTERS: { value: SupplyRequestStatus | undefined; label: string }[] = [
   { value: "PENDING", label: "Pending" },
@@ -117,20 +113,14 @@ function ApproveDialog({ request, onClose }: { request: SupplyRequest; onClose: 
 
           <div className="flex flex-col gap-1.5">
             <Label>Volunteer to carry it</Label>
-            <Select value={volunteerId} onValueChange={(v) => setVolunteerId((v as string) ?? "")}>
-              <SelectTrigger className="w-full rounded-lg">
-                <SelectValue placeholder="Select a verified volunteer...">
-                  {(v: string) => volunteers.find((x) => x.id === v)?.name ?? "Select a verified volunteer..."}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {volunteers.map((v) => (
-                  <SelectItem key={v.id} value={v.id}>
-                    {v.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SearchableSelect
+              value={volunteerId}
+              onValueChange={setVolunteerId}
+              options={volunteers.map((v) => ({ value: v.id, label: v.name }))}
+              placeholder="Select a verified volunteer..."
+              searchPlaceholder="Search volunteers…"
+              emptyText="No verified volunteers available"
+            />
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -197,6 +187,14 @@ function RejectDialog({ request, onClose }: { request: SupplyRequest; onClose: (
 export function SupplyRequestsView() {
   const [status, setStatus] = useState<SupplyRequestStatus | undefined>("PENDING");
   const { data: requests, isLoading } = useSupplyRequests({ status });
+  const [search, setSearch] = useState("");
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return (requests ?? []).filter(
+      (r) => !q || `${r.shelter.name} ${r.shelter.district.nameEn} ${r.requestedBy.name} ${r.items.map((i) => i.item).join(" ")}`.toLowerCase().includes(q),
+    );
+  }, [requests, search]);
+  const paged = usePaged(filtered, 6, `${status}|${search}`);
   const [approving, setApproving] = useState<SupplyRequest | null>(null);
   const [rejecting, setRejecting] = useState<SupplyRequest | null>(null);
 
@@ -206,15 +204,16 @@ export function SupplyRequestsView() {
         <p className="text-sm text-muted-foreground">
           Shelters asking for supplies, most urgent first. Approving takes the items from the store and hands them to a volunteer.
         </p>
-        <div className="inline-flex rounded-xl border border-border bg-muted/40 p-1">
+        <SearchInput value={search} onChange={setSearch} placeholder="Shelter, district, item or requester…" className="sm:max-w-xs" />
+        <div className="inline-flex rounded-full border border-border bg-card p-1">
           {FILTERS.map((f) => (
             <button
               key={f.label}
               type="button"
               onClick={() => setStatus(f.value)}
               className={cn(
-                "px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors",
-                status === f.value ? "bg-background text-foreground shadow-xs" : "text-muted-foreground",
+                "px-4 py-2 text-xs font-semibold rounded-full transition-colors",
+                status === f.value ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
               )}
             >
               {f.label}
@@ -225,9 +224,9 @@ export function SupplyRequestsView() {
 
       {isLoading ? (
         <Skeleton className="h-40 w-full rounded-3xl" />
-      ) : requests && requests.length > 0 ? (
+      ) : paged.pageItems.length > 0 ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {requests.map((r) => (
+          {paged.pageItems.map((r) => (
             <Card key={r.id} className="rounded-3xl border border-border bg-card p-5 flex flex-col gap-2">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="min-w-0">
@@ -272,6 +271,10 @@ export function SupplyRequestsView() {
         <Card className="rounded-3xl border border-border bg-card">
           <EmptyState icon={PackagePlus} title="No supply requests here" />
         </Card>
+      )}
+
+      {paged.total > 0 && (
+        <Pagination page={paged.page} totalPages={paged.totalPages} total={paged.total} pageSize={6} onChange={paged.setPage} />
       )}
 
       {approving && <ApproveDialog request={approving} onClose={() => setApproving(null)} />}

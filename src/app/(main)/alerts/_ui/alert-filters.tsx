@@ -1,18 +1,12 @@
 "use client";
 
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, RotateCcw, SlidersHorizontal, MapPinned, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useDistricts, useDivisions } from "@/lib/hooks/use-locations";
 import { ALERT_SEVERITIES } from "@/lib/alert-severity-styles";
 import type { AlertSeverity } from "@/lib/types/api";
@@ -132,60 +126,26 @@ export function AlertFilters({
 
           <div className="md:col-span-3 flex flex-col gap-1.5">
             <label className="text-xs font-bold text-muted-foreground">Division</label>
-            <Select
+            <SearchableSelect
               value={selectedDivisionId ? String(selectedDivisionId) : "all"}
               onValueChange={(val) => {
-                setSelectedDivisionId(val === "all" ? null : Number(val));
+                setSelectedDivisionId(!val || val === "all" ? null : Number(val));
                 setSelectedDistrictId(null);
               }}
-            >
-              <SelectTrigger className="w-full data-[size=default]:h-11 rounded-xl">
-                <SelectValue placeholder="All Divisions">
-                  {(val: string) =>
-                    val === "all" || !val
-                      ? "All Divisions"
-                      : (divisions?.find((d) => String(d.id) === val)?.nameEn ??
-                        "All Divisions")
-                  }
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Divisions</SelectItem>
-                {divisions?.map((division) => (
-                  <SelectItem key={division.id} value={String(division.id)}>
-                    {division.nameEn}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              options={[{ value: "all", label: "All Divisions" }, ...(divisions ?? []).map((d) => ({ value: String(d.id), label: d.nameEn, keywords: d.nameBn }))]}
+              searchPlaceholder="Search division…"
+            />
           </div>
 
           <div className="md:col-span-3 flex flex-col gap-1.5">
             <label className="text-xs font-bold text-muted-foreground">District</label>
-            <Select
+            <SearchableSelect
               value={selectedDistrictId ? String(selectedDistrictId) : "all"}
-              onValueChange={(val) => setSelectedDistrictId(val === "all" ? null : Number(val))}
+              onValueChange={(val) => setSelectedDistrictId(!val || val === "all" ? null : Number(val))}
               disabled={!selectedDivisionId}
-            >
-              <SelectTrigger className="w-full data-[size=default]:h-11 rounded-xl">
-                <SelectValue placeholder="All Districts">
-                  {(val: string) =>
-                    val === "all" || !val
-                      ? "All Districts"
-                      : (districts?.find((d) => String(d.id) === val)?.nameEn ??
-                        "All Districts")
-                  }
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Districts</SelectItem>
-                {districts?.map((district) => (
-                  <SelectItem key={district.id} value={String(district.id)}>
-                    {district.nameEn}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              options={[{ value: "all", label: "All Districts" }, ...(districts ?? []).map((d) => ({ value: String(d.id), label: d.nameEn, keywords: d.nameBn }))]}
+              searchPlaceholder="Search district…"
+            />
           </div>
         </div>
 

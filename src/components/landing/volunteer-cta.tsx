@@ -20,19 +20,14 @@ export default function VolunteerCTA() {
   const volunteerCount = volunteerStats?.total ?? 0;
 
   return (
-    <section className="relative w-full my-16 md:my-20 bg-background">
+    <section className="relative w-full my-6 md:my-20 bg-background">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div
-          className="relative w-full rounded-xl lg:rounded-2xl overflow-hidden py-12 px-6 md:py-16 md:px-12 lg:py-20 lg:px-16"
-          style={{
-            background:
-              "linear-gradient(135deg, oklch(0.35 0.174 18.042) 0%, oklch(0.505 0.174 18.042) 50%, oklch(0.30 0.1 30) 100%)",
-          }}
+          className="relative w-full rounded-[2.5rem] overflow-hidden py-12 px-6 md:py-16 md:px-12 lg:py-20 lg:px-16 bg-brand shadow-lift"
         >
-          <div
-            className="absolute inset-0 z-0 pointer-events-none opacity-[0.04] bg-[radial-gradient(circle,white_1px,transparent_1px)] bg-size-[20px_20px]"
-            aria-hidden="true"
-          />
+          <div className="absolute inset-0 z-0 pointer-events-none bg-dots opacity-40" aria-hidden="true" />
+          <div className="absolute -right-24 -top-24 z-0 h-96 w-96 rounded-full bg-brand-cyan/50 blur-3xl" aria-hidden="true" />
+          <div className="absolute -left-24 -bottom-32 z-0 h-96 w-96 rounded-full bg-brand-indigo/60 blur-3xl" aria-hidden="true" />
 
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 lg:gap-12 relative z-10 items-center">
             <motion.div

@@ -77,16 +77,19 @@ export default function AdminDashboardPage() {
 
       {/* Primary metrics */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Active Alerts" value={stats?.activeAlerts} icon={Radar} tint="destructive" isLoading={statsLoading} />
-        <StatCard label="Open Shelters" value={stats?.openShelters} icon={MapPin} tint="primary" isLoading={statsLoading} />
+        <StatCard label="Active Alerts" value={stats?.activeAlerts} icon={Radar} tint="destructive" isLoading={statsLoading} href="/admin/alerts" footerLabel="Manage alerts" />
+        <StatCard label="Open Shelters" value={stats?.openShelters} icon={MapPin} tint="primary" isLoading={statsLoading} href="/admin/shelters" footerLabel="View shelters" />
         <StatCard
           label="SOS Resolved"
           value={stats ? `${stats.resolvedSosRequests}/${stats.totalSosRequests}` : undefined}
           icon={Siren}
           tint="success"
           isLoading={statsLoading}
+          highlight
+          href="/admin/sos"
+          footerLabel="Open SOS queue"
         />
-        <StatCard label="Active Volunteers" value={stats?.activeVolunteers} icon={Users} tint="warning" isLoading={statsLoading} />
+        <StatCard label="Active Volunteers" value={stats?.activeVolunteers} icon={Users} tint="warning" isLoading={statsLoading} href="/admin/volunteers" footerLabel="View volunteers" />
       </div>
 
       {/* Secondary metrics */}

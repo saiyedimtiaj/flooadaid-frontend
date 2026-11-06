@@ -125,11 +125,11 @@ export default function Navbar() {
             className="flex items-center gap-2.5 group rounded-md focus-visible:outline-2 focus-visible:outline-destructive focus-visible:outline-offset-4"
             aria-label="FloodAid BD Home"
           >
-            <div className="flex items-center justify-center size-9 rounded-xl bg-destructive/10 text-destructive group-hover:scale-105 transition-transform duration-200 shadow-xs border border-destructive/20">
+            <div className="flex items-center justify-center size-9 rounded-xl bg-primary text-lime group-hover:scale-105 transition-transform duration-200">
               <Waves className="size-5 animate-pulse" />
             </div>
             <span className="font-bold text-xl tracking-tight">
-              <span className="text-destructive">Flood</span>
+              <span className={!scrolled && isHomePage ? "text-lime" : "text-primary"}>Flood</span>
               <span
                 className={cn(
                   "transition-colors duration-200",

@@ -1,18 +1,12 @@
-import React from "react";
-import AboutHero from "./_ui/about-hero";
-import AboutMission from "./_ui/about-mission";
-import AboutProblem from "./_ui/about-problem";
-import AboutSolution from "./_ui/about-solution";
+import type { Metadata } from "next";
+import { AboutContent } from "./_ui/about-content";
 
-const page = () => {
-  return (
-    <div>
-      <AboutHero />
-      <AboutMission />
-      <AboutProblem />
-      <AboutSolution />
-    </div>
-  );
+export const metadata: Metadata = {
+  title: "About — FloodAid BD",
+  description:
+    "FloodAid BD connects people in flood danger with shelters, rescuers and relief across Bangladesh — free for everyone.",
 };
 
-export default page;
+export default function AboutPage() {
+  return <AboutContent />;
+}

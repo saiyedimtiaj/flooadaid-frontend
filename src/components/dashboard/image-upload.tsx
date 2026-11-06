@@ -2,21 +2,23 @@
 
 import { useRef, useState } from "react";
 import Image from "next/image";
-import { ImageOff, ImagePlus, Loader2, X } from "lucide-react";
+import { ImagePlus, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { isCloudinaryConfigured, uploadImageToCloudinary } from "@/lib/cloudinary";
+import { uploadImage, type UploadFolder } from "@/lib/upload";
 
 export function ImageUpload({
   value,
   onChange,
   label = "Add photo",
   className,
+  folder = "general",
 }: {
   value: string | null;
   onChange: (url: string | null) => void;
   label?: string;
   className?: string;
+  folder?: UploadFolder;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -27,7 +29,7 @@ export function ImageUpload({
     setIsUploading(true);
     setProgress(0);
     try {
-      const url = await uploadImageToCloudinary(file, setProgress);
+      const url = await uploadImage(file, { folder, onProgress: setProgress });
       onChange(url);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Upload failed.");
@@ -48,21 +50,6 @@ export function ImageUpload({
         >
           <X className="h-3.5 w-3.5" />
         </button>
-      </div>
-    );
-  }
-
-  if (!isCloudinaryConfigured()) {
-    return (
-      <div
-        className={cn(
-          "flex flex-col items-center justify-center gap-1.5 w-full max-w-40 h-40 rounded-xl border-2 border-dashed border-border text-muted-foreground/60",
-          className,
-        )}
-        title="Photo upload isn't configured — set NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME and NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET"
-      >
-        <ImageOff className="h-5 w-5" />
-        <span className="text-xs font-semibold text-center px-2">Photo upload not configured</span>
       </div>
     );
   }

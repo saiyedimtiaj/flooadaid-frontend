@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { MapPin, Droplets, Navigation, Share2, Clock } from "lucide-react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,15 @@ const severityStripColors: Record<Alert["severity"], string> = {
   WATCH: "bg-blue-500",
   NORMAL: "bg-emerald-500",
 };
+
+function sheltersNearAlert(alert: Alert) {
+  const { id, nameEn, latitude, longitude } = alert.district;
+  const params =
+    latitude !== null && longitude !== null
+      ? new URLSearchParams({ lat: String(latitude), lng: String(longitude), near: nameEn })
+      : new URLSearchParams({ district: String(id) });
+  return `/shelters?${params}`;
+}
 
 interface AlertDetailSheetProps {
   alert: Alert | null;
@@ -101,10 +111,8 @@ export function AlertDetailSheet({ alert, isOpen, onClose }: AlertDetailSheetPro
         </div>
 
         <div className="p-4 border-t border-border bg-background/95 backdrop-blur-md flex gap-3 shrink-0">
-          <Button className="flex-1 font-bold group bg-primary hover:bg-primary/95 text-primary-foreground" size="lg" nativeButton={false} render={<a
-              href={`https://www.google.com/maps/search/?api=1&query=shelters+near+${alert.district.nameEn}`}
-              target="_blank"
-              rel="noreferrer"
+          <Button className="flex-1 font-bold group bg-primary hover:bg-primary/95 text-primary-foreground" size="lg" nativeButton={false} render={<Link
+              href={sheltersNearAlert(alert)}
               className="flex items-center justify-center gap-2 w-full" />}>
               <Navigation className="h-4 w-4" />
               Find Nearby Shelters

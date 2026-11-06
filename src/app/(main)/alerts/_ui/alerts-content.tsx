@@ -3,12 +3,12 @@
 import { useState, useTransition, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
-import { motion } from "framer-motion";
-import { Map, List, CloudOff, ChevronRight, Radar, Loader2 } from "lucide-react";
-import Link from "next/link";
+import { Map, List, CloudOff, Radar, AlertOctagon, MapPinned, Droplets } from "lucide-react";
 import { AlertFilters } from "./alert-filters";
 import { AlertCard } from "./alert-card";
 import { AlertDetailSheet } from "./alert-detail-sheet";
+import { PageHero } from "@/components/public/page-hero";
+import { MapSkeleton } from "@/components/ui/map-skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { useAlerts } from "@/lib/hooks/use-alerts";
@@ -31,11 +31,8 @@ function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number) {
 const AlertsMap = dynamic(() => import("./alerts-map"), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-87.5 md:h-225 flex flex-col items-center justify-center bg-muted/20 border border-border rounded-xl">
-      <div className="h-8 w-8 rounded-full border-4 border-primary border-t-transparent animate-spin" />
-      <span className="text-xs text-muted-foreground font-bold uppercase tracking-widest mt-4">
-        Loading map...
-      </span>
+    <div className="h-87.5 w-full overflow-hidden rounded-xl border border-border md:h-225">
+      <MapSkeleton />
     </div>
   ),
 });
@@ -160,61 +157,24 @@ export function AlertsContent() {
   return (
     <div className="space-y-6">
       {/* 1. Page Header */}
-      <div className="relative overflow-hidden rounded-3xl border border-border bg-linear-to-br from-destructive/8 via-transparent to-primary/5 px-6 py-8 md:px-8 md:py-10">
-        <div
-          className="absolute inset-0 bg-[radial-gradient(ellipse_60%_60%_at_20%_0%,color-mix(in_oklch,var(--color-destructive)_8%,transparent),transparent)] pointer-events-none"
-          aria-hidden="true"
-        />
-
-        <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            className="flex items-start gap-4"
-          >
-            <div className="hidden sm:flex items-center justify-center h-14 w-14 rounded-2xl bg-linear-to-br from-destructive to-orange-500 text-white shrink-0 shadow-sm">
-              <Radar className="h-7 w-7" />
-            </div>
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-1 text-xs font-semibold text-muted-foreground select-none">
-                <Link href="/" className="hover:text-foreground transition-colors">
-                  Home
-                </Link>
-                <ChevronRight className="h-3 w-3" />
-                <span className="text-foreground">Flood Alerts</span>
-              </div>
-              <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-foreground">
-                Flood Alerts
-              </h1>
-              <p className="text-sm text-muted-foreground max-w-md">
-                Monitor real-time flood conditions across Bangladesh. Stay
-                informed, stay safe.
-              </p>
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
-            className="flex items-center gap-3 rounded-2xl border border-destructive/20 bg-background/70 backdrop-blur-md px-5 py-4 self-start lg:self-auto select-none"
-          >
-            <span className="relative flex h-2.5 w-2.5 shrink-0">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-600"></span>
-            </span>
-            <div className="flex flex-col">
-              <span className="text-2xl font-extrabold text-destructive tabular-nums leading-none">
-                {severeCount}
-              </span>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mt-1">
-                Severe Alerts Active
-              </span>
-            </div>
-          </motion.div>
-        </div>
-      </div>
+      <PageHero
+        icon={Radar}
+        crumb="Flood Alerts"
+        eyebrow="Real-time monitoring"
+        title="Flood Alerts"
+        description="Water levels and flood warnings for every district in Bangladesh — updated as river gauges report."
+        statsTitle="Across Bangladesh"
+        stats={[
+          { label: "Active alerts", value: isLoading ? undefined : alerts.length, icon: Radar },
+          { label: "Danger & critical", value: isLoading ? undefined : severeCount, icon: AlertOctagon, tone: "alert" },
+          { label: "Districts on alert", value: isLoading ? undefined : new Set(alerts.map((a) => a.districtId)).size, icon: MapPinned },
+          {
+            label: "Highest water level",
+            value: isLoading ? undefined : `${alerts.reduce((m, a) => Math.max(m, a.waterLevelCm ?? 0), 0)} cm`,
+            icon: Droplets,
+          },
+        ]}
+      />
 
       <AlertFilters
         searchQuery={searchQuery}
@@ -285,8 +245,8 @@ export function AlertsContent() {
 
       <div className="relative min-h-100">
         {isLoading ? (
-          <div className="flex items-center justify-center h-87.5 md:h-180 rounded-xl border border-border bg-muted/10">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          <div className="h-87.5 overflow-hidden rounded-xl border border-border md:h-180">
+            <MapSkeleton label="Loading flood alerts…" />
           </div>
         ) : activeView === "map" ? (
           <div className="animate-fade-in duration-200">

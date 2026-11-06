@@ -77,7 +77,10 @@ export default function AlertsMap({ alerts, onSelectAlert }: AlertsMapProps) {
   return (
     <div className="relative w-full h-87.5 md:h-180 rounded-2xl overflow-hidden border border-border shadow-sm z-10">
       <MapContainer center={BANGLADESH_CENTER} zoom={7} className="w-full h-full">
-        <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" />
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
 
         {alerts.map((alert) => {
           const style = ALERT_SEVERITY_STYLES[alert.severity];

@@ -1,19 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm, useWatch, Controller } from "react-hook-form";
-import { Plus, Radar, Trash2, Pencil } from "lucide-react";
+import { AlertOctagon, Droplets, MapPinned, Plus, Radar, Trash2, Pencil } from "lucide-react";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Sheet,
   SheetContent,
@@ -24,6 +18,9 @@ import {
 import { ConfirmDialog } from "@/components/ui/alert-dialog";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { DataTable, type Column } from "@/components/dashboard/data-table";
+import { StatCard } from "@/components/dashboard/stat-card";
+import { DistrictFilter, FilterSelect, SearchInput } from "@/components/dashboard/list-toolbar";
+import { timeAgo } from "@/lib/format-time-ago";
 import { DistrictSelect } from "@/components/dashboard/district-select";
 import { AlertSeverityBadge } from "@/components/dashboard/alert-severity-badge";
 import { useAlerts, useCreateAlert, useDeleteAlert, useUpdateAlert, type AlertInput } from "@/lib/hooks/use-alerts";
@@ -93,11 +90,12 @@ function AlertFormSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="overflow-y-auto">
+      <SheetContent className="sm:max-w-md">
         <SheetHeader>
           <SheetTitle>{editing ? "Edit Alert" : "New Flood Alert"}</SheetTitle>
         </SheetHeader>
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 px-4">
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <div data-slot="modal-body" className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
             <Label>Title</Label>
             <Input {...register("title", { required: true })} placeholder="Flash Flood Warning — Banshkhali" />
@@ -116,18 +114,13 @@ function AlertFormSheet({
               name="severity"
               control={control}
               render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger className="w-full data-[size=default]:h-10 rounded-lg">
-                    <SelectValue placeholder="Select severity..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SEVERITIES.map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {s}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <SearchableSelect
+                  value={field.value ?? ""}
+                  onValueChange={(v) => v && field.onChange(v)}
+                  options={SEVERITIES.map((sv) => ({ value: sv, label: sv.charAt(0) + sv.slice(1).toLowerCase() }))}
+                  placeholder="Select severity..."
+                  searchPlaceholder="Search severity…"
+                />
               )}
             />
           </div>
@@ -158,7 +151,8 @@ function AlertFormSheet({
               {severity} alerts notify every registered user whose home district matches.
             </p>
           )}
-          <SheetFooter className="px-0">
+          </div>
+          <SheetFooter>
             <Button type="submit" disabled={isSubmitting} className="font-semibold">
               {editing ? "Save Changes" : "Create Alert"}
             </Button>
@@ -170,7 +164,22 @@ function AlertFormSheet({
 }
 
 export default function AdminAlertsPage() {
-  const { data, isLoading } = useAlerts({ limit: 50 });
+  const { data, isLoading } = useAlerts({ limit: 100 });
+  const [search, setSearch] = useState("");
+  const [severity, setSeverity] = useState("");
+  const [district, setDistrict] = useState("");
+  const alerts = useMemo(() => data?.data ?? [], [data]);
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return alerts.filter((a) => {
+      if (severity && a.severity !== severity) return false;
+      if (district && String(a.districtId) !== district) return false;
+      return !q || `${a.title} ${a.description} ${a.district.nameEn}`.toLowerCase().includes(q);
+    });
+  }, [alerts, search, severity, district]);
+  const severe = alerts.filter((a) => a.severity === "DANGER" || a.severity === "CRITICAL").length;
+  const districtsOnAlert = new Set(alerts.map((a) => a.districtId)).size;
+  const highestLevel = alerts.reduce((m, a) => Math.max(m, a.waterLevelCm ?? 0), 0);
   const deleteAlert = useDeleteAlert();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editing, setEditing] = useState<Alert | null>(null);
@@ -208,9 +217,7 @@ export default function AdminAlertsPage() {
     {
       key: "posted",
       header: "Posted",
-      render: (a) => (
-        <span className="text-muted-foreground">{new Date(a.createdAt).toLocaleDateString()}</span>
-      ),
+      render: (a) => <span className="text-muted-foreground">{timeAgo(a.updatedAt)}</span>,
     },
     {
       key: "actions",
@@ -252,21 +259,47 @@ export default function AdminAlertsPage() {
         title="Alert Management"
         description="Post and manage flood alerts across districts"
         action={
-          <Button className="gap-2 font-semibold" onClick={openCreate}>
-            <Plus className="h-4 w-4" />
-            New Alert
+          <Button onClick={openCreate}>
+            <Plus className="h-4 w-4 text-lime" />
+            New alert
           </Button>
         }
       />
 
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StatCard label="Active alerts" value={alerts.length} icon={Radar} isLoading={isLoading} highlight />
+        <StatCard label="Danger & critical" value={severe} icon={AlertOctagon} tint="destructive" isLoading={isLoading} />
+        <StatCard label="Districts on alert" value={districtsOnAlert} icon={MapPinned} isLoading={isLoading} />
+        <StatCard label="Highest water level" value={highestLevel ? `${highestLevel} cm` : "—"} icon={Droplets} isLoading={isLoading} />
+      </div>
+
       <DataTable
         columns={columns}
-        data={data?.data}
+        data={filtered}
         isLoading={isLoading}
         getRowKey={(a) => a.id}
+        resetKey={`${search}|${severity}|${district}`}
+        toolbar={
+          <>
+            <SearchInput value={search} onChange={setSearch} placeholder="Search title, description or district…" className="lg:max-w-sm" />
+            <FilterSelect
+              value={severity}
+              onChange={setSeverity}
+              allLabel="All severities"
+              options={[
+                { value: "CRITICAL", label: "Critical" },
+                { value: "DANGER", label: "Danger" },
+                { value: "WARNING", label: "Warning" },
+                { value: "WATCH", label: "Watch" },
+                { value: "NORMAL", label: "Normal" },
+              ]}
+            />
+            <DistrictFilter value={district} onChange={setDistrict} />
+          </>
+        }
         emptyIcon={Radar}
-        emptyTitle="No alerts posted yet"
-        emptyDescription="Create a flood alert to warn affected districts."
+        emptyTitle={search || severity || district ? "No alerts match" : "No alerts posted yet"}
+        emptyDescription={search || severity || district ? "Try another severity, district or search term." : "Create a flood alert to warn affected districts."}
         emptyAction={
           <Button className="gap-2 font-semibold" onClick={openCreate}>
             <Plus className="h-4 w-4" />

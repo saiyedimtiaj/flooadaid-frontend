@@ -34,6 +34,7 @@ export default function RootLayout({
       lang="en"
       className={cn("h-full", "antialiased", plusJakartaSans.className, plusJakartaSans.variable, notoSansBengali.variable)}
       suppressHydrationWarning
+      data-scroll-behavior="smooth"
     >
       <body className="min-h-full flex flex-col font-sans" suppressHydrationWarning>
         <ThemeProvider>

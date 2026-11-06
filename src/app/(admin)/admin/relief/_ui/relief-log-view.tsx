@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Image from "next/image";
 import { useFieldArray, useForm, Controller } from "react-hook-form";
 import { Plus, Package, Trash2 } from "lucide-react";
@@ -19,6 +19,7 @@ import { DataTable, type Column } from "@/components/dashboard/data-table";
 import { DistrictSelect } from "@/components/dashboard/district-select";
 import { ImageUpload } from "@/components/dashboard/image-upload";
 import { useCreateRelief, useReliefLogs, type ReliefInput } from "@/lib/hooks/use-relief";
+import { DistrictFilter, SearchInput } from "@/components/dashboard/list-toolbar";
 import type { ReliefLog } from "@/lib/types/api";
 
 function ReliefFormSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
@@ -44,11 +45,12 @@ function ReliefFormSheet({ open, onOpenChange }: { open: boolean; onOpenChange: 
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="overflow-y-auto sm:max-w-md">
+      <SheetContent className="sm:max-w-md">
         <SheetHeader>
           <SheetTitle>Log Relief Distribution</SheetTitle>
         </SheetHeader>
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 px-4">
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <div data-slot="modal-body" className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
             <Label>District</Label>
             <Controller
@@ -122,6 +124,7 @@ function ReliefFormSheet({ open, onOpenChange }: { open: boolean; onOpenChange: 
                   value={field.value?.[0] ?? null}
                   onChange={(url) => field.onChange(url ? [url] : [])}
                   label="Add photo"
+                  folder="relief"
                 />
               )}
             />
@@ -132,7 +135,8 @@ function ReliefFormSheet({ open, onOpenChange }: { open: boolean; onOpenChange: 
             <Textarea {...register("notes")} rows={2} />
           </div>
 
-          <SheetFooter className="px-0">
+          </div>
+          <SheetFooter>
             <Button type="submit" disabled={createRelief.isPending} className="font-semibold">
               Log Distribution
             </Button>
@@ -144,7 +148,21 @@ function ReliefFormSheet({ open, onOpenChange }: { open: boolean; onOpenChange: 
 }
 
 export function ReliefLogView() {
-  const { data, isLoading } = useReliefLogs({ limit: 50 });
+  const { data, isLoading } = useReliefLogs({ limit: 100 });
+  const [search, setSearch] = useState("");
+  const [district, setDistrict] = useState("");
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return (data?.data ?? []).filter((log) => {
+      if (district && String(log.districtId) !== district) return false;
+      return (
+        !q ||
+        `${log.locationName} ${log.distributedBy} ${log.district.nameEn} ${log.itemsDistributed.map((i) => i.item).join(" ")}`
+          .toLowerCase()
+          .includes(q)
+      );
+    });
+  }, [data, search, district]);
   const [sheetOpen, setSheetOpen] = useState(false);
 
   const columns: Column<ReliefLog>[] = [
@@ -208,18 +226,22 @@ export function ReliefLogView() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex justify-end">
-        <Button className="gap-2 font-semibold" onClick={() => setSheetOpen(true)}>
-          <Plus className="h-4 w-4" />
-          Log Distribution
-        </Button>
-      </div>
-
       <DataTable
         columns={columns}
-        data={data?.data}
+        data={filtered}
         isLoading={isLoading}
         getRowKey={(log) => log.id}
+        resetKey={`${search}|${district}`}
+        toolbar={
+          <>
+            <SearchInput value={search} onChange={setSearch} placeholder="Search location, team or item…" className="lg:max-w-sm" />
+            <DistrictFilter value={district} onChange={setDistrict} />
+            <Button className="lg:ml-auto" onClick={() => setSheetOpen(true)}>
+              <Plus className="h-4 w-4 text-lime" />
+              Log distribution
+            </Button>
+          </>
+        }
         emptyIcon={Package}
         emptyTitle="No relief logs yet"
         emptyDescription="Record where relief has been distributed to track coverage."
