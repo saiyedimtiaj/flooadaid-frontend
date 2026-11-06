@@ -31,7 +31,7 @@ export function Footer() {
   return (
     <footer className="relative overflow-hidden bg-foreground text-background/85 pt-12 md:pt-16 pb-8 border-t border-transparent">
       <div
-        className="absolute top-0 inset-x-0 h-40 pointer-events-none bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,color-mix(in_oklch,var(--destructive)_8%,transparent),transparent)] hidden md:block"
+        className="absolute top-0 inset-x-0 h-40 pointer-events-none bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,color-mix(in_oklch,var(--lime)_8%,transparent),transparent)] hidden md:block"
         aria-hidden="true"
       />
 
@@ -41,7 +41,7 @@ export function Footer() {
       />
 
       <div
-        className="absolute top-0 inset-x-0 h-px bg-linear-to-r from-transparent via-destructive/25 to-transparent"
+        className="absolute top-0 inset-x-0 h-px bg-linear-to-r from-transparent via-lime/25 to-transparent"
         aria-hidden="true"
       />
 
@@ -53,11 +53,11 @@ export function Footer() {
               className="flex items-center gap-2.5 rounded-md focus-visible:outline-2 focus-visible:outline-destructive"
               aria-label="FloodAid BD Home"
             >
-              <div className="flex items-center justify-center size-9 rounded-xl bg-destructive/15 text-destructive shadow-xs">
+              <div className="flex items-center justify-center size-9 rounded-xl bg-lime text-lime-foreground">
                 <Waves className="size-5" />
               </div>
               <span className="font-bold text-xl tracking-tight">
-                <span className="text-destructive">Flood</span>
+                <span className="text-lime">Flood</span>
                 <span className="text-background">Aid</span>
               </span>
             </Link>

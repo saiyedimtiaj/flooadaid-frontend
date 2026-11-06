@@ -32,7 +32,7 @@ export default function AdminReliefPage() {
         description="Review shelter supply requests, track store inventory, assign relief to volunteers, and log distributions."
       />
 
-      <div className="flex flex-wrap gap-2">
+      <div className="inline-flex flex-wrap gap-1 self-start rounded-3xl sm:rounded-full border border-border bg-card p-1.5">
         {TABS.map((t) => {
           const active = tab === t.value;
           const Icon = t.icon;
@@ -42,10 +42,10 @@ export default function AdminReliefPage() {
               type="button"
               onClick={() => setTab(t.value)}
               className={cn(
-                "inline-flex items-center gap-2 rounded-full border px-4 h-10 text-sm font-bold transition-all",
+                "inline-flex items-center gap-2 rounded-full px-5 h-11 text-sm font-semibold transition-colors",
                 active
-                  ? "border-primary bg-primary/10 text-primary shadow-sm"
-                  : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground",
+                  ? "bg-primary text-primary-foreground [&_svg]:text-lime"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
               )}
             >
               <Icon className="size-4" />

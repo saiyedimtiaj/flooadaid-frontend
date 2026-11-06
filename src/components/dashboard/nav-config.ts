@@ -85,3 +85,15 @@ export function navItemsFor(role: Role): NavItem[] {
   if (role === "VOLUNTEER") return VOLUNTEER_NAV;
   return USER_NAV;
 }
+
+export const ROLE_QUICK_ACTION: Record<Role, { label: string; href: string }> = {
+  ADMIN: { label: "Post New Alert", href: "/admin/alerts" },
+  VOLUNTEER: { label: "New Manual SOS", href: "/volunteer/manual-sos" },
+  USER: { label: "Send an SOS", href: "/sos" },
+};
+
+export const ROLE_NOTIFICATIONS: Record<Role, string> = {
+  ADMIN: "/admin/notifications",
+  VOLUNTEER: "/volunteer/notifications",
+  USER: "/user/notifications",
+};

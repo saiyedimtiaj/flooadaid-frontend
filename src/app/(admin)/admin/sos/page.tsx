@@ -1,336 +1,368 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Siren, Phone, MapPin, Search, Users, Clock, Settings2 } from "lucide-react";
-import { motion, type Variants } from "framer-motion";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { useState } from "react";
+import { Clock, MapPin, Phone, Settings2, Siren, UserCheck, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog";
-import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { EmptyState } from "@/components/dashboard/empty-state";
-import { SosStatusBadge, SosPriorityBadge } from "@/components/dashboard/sos-status-badge";
-import { useAssignSos, useSosRequests, useUpdateSosStatus } from "@/lib/hooks/use-sos";
+import { Pagination } from "@/components/dashboard/pagination";
+import { SosPriorityBadge, SosStatusBadge } from "@/components/dashboard/sos-status-badge";
+import { DistrictFilter, FilterSelect, SearchInput, useDebounced } from "@/components/dashboard/list-toolbar";
+import { useAssignSos, useSosRequests, useSosStatsSummary, useUpdateSosStatus } from "@/lib/hooks/use-sos";
 import { useAssignableVolunteers } from "@/lib/hooks/use-volunteers";
-import type { SosStatus, SosRequest } from "@/lib/types/api";
+import { timeAgo } from "@/lib/format-time-ago";
+import type { SosPriority, SosRequest, SosStatus } from "@/lib/types/api";
 import { cn } from "@/lib/utils";
 
-const STATUS_TABS: { value: SosStatus | "ALL"; label: string; dot: string }[] = [
-  { value: "ALL", label: "All", dot: "bg-primary" },
-  { value: "PENDING", label: "Pending", dot: "bg-amber-500" },
-  { value: "ASSIGNED", label: "Assigned", dot: "bg-sky-500" },
-  { value: "IN_PROGRESS", label: "In Progress", dot: "bg-violet-500" },
-  { value: "RESOLVED", label: "Resolved", dot: "bg-emerald-500" },
-  { value: "CANCELLED", label: "Cancelled", dot: "bg-muted-foreground" },
+const STATUS_TABS: { value: SosStatus | ""; label: string }[] = [
+  { value: "", label: "All" },
+  { value: "PENDING", label: "Pending" },
+  { value: "ASSIGNED", label: "Assigned" },
+  { value: "IN_PROGRESS", label: "In progress" },
+  { value: "RESOLVED", label: "Resolved" },
+  { value: "CANCELLED", label: "Cancelled" },
 ];
 
 const STATUS_OPTIONS: SosStatus[] = ["PENDING", "ASSIGNED", "IN_PROGRESS", "RESOLVED", "CANCELLED"];
 
-const PRIORITY_BAR: Record<string, string> = {
-  CRITICAL: "bg-destructive",
-  HIGH: "bg-amber-500",
-  MEDIUM: "bg-sky-500",
-  LOW: "bg-muted-foreground",
+const PRIORITY_OPTIONS = [
+  { value: "CRITICAL", label: "Critical" },
+  { value: "HIGH", label: "High" },
+  { value: "MEDIUM", label: "Medium" },
+  { value: "LOW", label: "Low" },
+];
+
+const AVATAR_TINT: Record<SosPriority, string> = {
+  CRITICAL: "bg-destructive/12 text-destructive",
+  HIGH: "bg-amber-500/15 text-amber-700",
+  MEDIUM: "bg-sky-500/12 text-sky-700",
+  LOW: "bg-muted text-muted-foreground",
 };
 
-const fade: Variants = {
-  hidden: { opacity: 0, y: 10 },
-  visible: (i: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.3, delay: i * 0.03, ease: [0.16, 1, 0.3, 1] },
-  }),
-};
+const PAGE_SIZE = 10;
 
-const MotionCard = motion.create(Card);
+function initials(name: string) {
+  return name
+    .split(" ")
+    .map((p) => p[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+}
 
 export default function AdminSosPage() {
-  const [statusFilter, setStatusFilter] = useState<SosStatus | "ALL">("ALL");
+  const [status, setStatus] = useState<SosStatus | "">("");
+  const [priority, setPriority] = useState("");
+  const [district, setDistrict] = useState("");
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const q = useDebounced(search);
 
-  // Fetch the full queue once; filter/count client-side so tabs can show counts.
-  const { data, isLoading } = useSosRequests({ limit: 100 });
-  // Only verified, available volunteers can be assigned (the API enforces this too).
+  const { data, isLoading, isFetching } = useSosRequests({
+    status: status || undefined,
+    priority: (priority || undefined) as SosPriority | undefined,
+    districtId: district ? Number(district) : undefined,
+    q,
+    page,
+    limit: PAGE_SIZE,
+  });
+  const { data: stats } = useSosStatsSummary();
   const { options: volunteers } = useAssignableVolunteers();
   const updateStatus = useUpdateSosStatus();
   const assignSos = useAssignSos();
+  const [managing, setManaging] = useState<SosRequest | null>(null);
 
-  const all = useMemo(() => data?.data ?? [], [data]);
-
-  const counts = useMemo(() => {
-    const c: Record<string, number> = { ALL: all.length };
-    for (const s of all) c[s.status] = (c[s.status] ?? 0) + 1;
-    return c;
-  }, [all]);
-
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return all.filter((sos) => {
-      if (statusFilter !== "ALL" && sos.status !== statusFilter) return false;
-      if (!q) return true;
-      return (
-        sos.name.toLowerCase().includes(q) ||
-        sos.phone.includes(q) ||
-        (sos.district?.nameEn ?? "").toLowerCase().includes(q) ||
-        sos.helpType.join(" ").toLowerCase().includes(q)
-      );
-    });
-  }, [all, statusFilter, search]);
+  const rows = data?.data ?? [];
+  const meta = data?.meta;
+  const reset = <T,>(setter: (v: T) => void) => (v: T) => {
+    setter(v);
+    setPage(1);
+  };
+  const countFor = (s: SosStatus | "") => (s === "" ? stats?.total : stats?.byStatus?.[s]) ?? 0;
+  const hasFilters = !!(priority || district || search);
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         icon={Siren}
         title="SOS Requests"
-        description="Live rescue queue — sorted by priority. Auto-refreshes every 15s."
+        description="Live rescue queue, most urgent first. Refreshes every 15 seconds."
       />
 
-      {/* Segmented status tabs with counts */}
-      <div className="flex flex-wrap gap-2">
-        {STATUS_TABS.map((tab) => {
-          const active = statusFilter === tab.value;
-          return (
-            <button
-              key={tab.value}
-              type="button"
-              onClick={() => setStatusFilter(tab.value)}
-              className={cn(
-                "inline-flex items-center gap-2 rounded-full border px-3.5 h-9 text-xs font-bold transition-all",
-                active
-                  ? "border-primary bg-primary/10 text-primary shadow-sm"
-                  : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground",
-              )}
-            >
-              <span className={cn("size-2 rounded-full", tab.dot)} />
-              {tab.label}
-              <span
+      <section className="overflow-hidden rounded-2xl border border-border bg-card">
+        <div className="flex flex-col gap-4 border-b border-border p-4">
+          <div className="flex flex-wrap gap-1 self-start rounded-3xl border border-border bg-background p-1 sm:rounded-full">
+            {STATUS_TABS.map((tab) => (
+              <button
+                key={tab.label}
+                type="button"
+                onClick={() => reset(setStatus)(tab.value)}
                 className={cn(
-                  "min-w-5 rounded-full px-1.5 text-[10px] font-black tabular-nums",
-                  active ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground",
+                  "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-colors",
+                  status === tab.value ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
                 )}
               >
-                {counts[tab.value] ?? 0}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+                {tab.label}
+                <span
+                  className={cn(
+                    "rounded-full px-1.5 text-[11px] tabular-nums",
+                    status === tab.value ? "bg-lime text-lime-foreground" : "bg-muted text-muted-foreground",
+                  )}
+                >
+                  {countFor(tab.value)}
+                </span>
+              </button>
+            ))}
+          </div>
 
-      {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-        <Input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by name, phone, district, or help type..."
-          className="pl-10 h-11 rounded-xl"
-        />
-      </div>
-
-      {isLoading ? (
-        <div className="space-y-3">
-          <Skeleton className="h-28 w-full rounded-2xl" />
-          <Skeleton className="h-28 w-full rounded-2xl" />
-        </div>
-      ) : filtered.length > 0 ? (
-        <div className="flex flex-col gap-3">
-          {filtered.map((sos, i) => (
-            <SosRow
-              key={sos.id}
-              sos={sos}
-              index={i}
-              volunteers={volunteers}
-              onStatus={(status) => updateStatus.mutate({ id: sos.id, status })}
-              onAssign={(volunteerId) => assignSos.mutate({ id: sos.id, volunteerId })}
+          <div className="flex flex-col gap-3 lg:flex-row">
+            <SearchInput
+              value={search}
+              onChange={reset(setSearch)}
+              placeholder="Search name, phone, address or district…"
+              className="lg:max-w-md"
             />
-          ))}
+            <FilterSelect value={priority} onChange={reset(setPriority)} options={PRIORITY_OPTIONS} allLabel="All priorities" />
+            <DistrictFilter value={district} onChange={reset(setDistrict)} />
+            {hasFilters && (
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setPriority("");
+                  setDistrict("");
+                  setSearch("");
+                  setPage(1);
+                }}
+              >
+                Clear filters
+              </Button>
+            )}
+          </div>
         </div>
-      ) : (
-        <Card className="rounded-3xl border border-border bg-card">
-          <EmptyState
-            icon={Siren}
-            title={search ? "No matching requests" : "No SOS requests here"}
-            description={
-              search
-                ? "Try a different search term."
-                : "Requests in this category will appear as they come in."
-            }
-          />
-        </Card>
+
+        <div className="hidden grid-cols-[minmax(0,2.2fr)_minmax(0,1.4fr)_minmax(0,1.2fr)_minmax(0,1.3fr)_minmax(0,1.2fr)_auto] gap-4 border-b border-border bg-muted/50 px-5 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground xl:grid">
+          <span>Requester</span>
+          <span>Location</span>
+          <span>Need</span>
+          <span>Status</span>
+          <span>Volunteer</span>
+          <span className="w-24 text-right">Action</span>
+        </div>
+
+        <div className={cn("transition-opacity", isFetching && !isLoading && "opacity-60")}>
+          {isLoading ? (
+            <div className="divide-y divide-border">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-4 px-5 py-4">
+                  <Skeleton className="h-11 w-11 rounded-full" />
+                  <div className="flex flex-1 flex-col gap-2">
+                    <Skeleton className="h-4 w-40" />
+                    <Skeleton className="h-3 w-28" />
+                  </div>
+                  <Skeleton className="hidden h-6 w-24 rounded-full md:block" />
+                  <Skeleton className="hidden h-6 w-20 rounded-full md:block" />
+                  <Skeleton className="h-10 w-24 rounded-xl" />
+                </div>
+              ))}
+            </div>
+          ) : rows.length > 0 ? (
+            <ul className="divide-y divide-border">
+              {rows.map((sos) => (
+                <li
+                  key={sos.id}
+                  className="grid grid-cols-1 gap-3 px-5 py-4 transition-colors hover:bg-muted/40 xl:grid-cols-[minmax(0,2.2fr)_minmax(0,1.4fr)_minmax(0,1.2fr)_minmax(0,1.3fr)_minmax(0,1.2fr)_auto] xl:items-center xl:gap-4"
+                >
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-bold", AVATAR_TINT[sos.priority])}>
+                      {initials(sos.name)}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-foreground">{sos.name}</p>
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                        <a href={`tel:${sos.phone}`} className="inline-flex items-center gap-1 hover:text-primary">
+                          <Phone className="h-3 w-3" />
+                          {sos.phone}
+                        </a>
+                        <span className="inline-flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {timeAgo(sos.createdAt)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="min-w-0 text-sm">
+                    <p className="inline-flex items-center gap-1.5 font-medium text-foreground">
+                      <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                      {sos.district?.nameEn}
+                    </p>
+                    {sos.addressText && <p className="truncate text-xs text-muted-foreground">{sos.addressText}</p>}
+                  </div>
+                  <div className="text-sm">
+                    <p className="inline-flex items-center gap-1.5 font-medium text-foreground">
+                      <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                      {sos.peopleCount} people
+                    </p>
+                    <p className="truncate text-xs capitalize text-muted-foreground">{sos.helpType.join(", ")}</p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <SosPriorityBadge priority={sos.priority} />
+                    <SosStatusBadge status={sos.status} />
+                  </div>
+                  <div className="min-w-0 text-sm">
+                    {sos.assignedTo ? (
+                      <p className="inline-flex max-w-full items-center gap-1.5 truncate font-medium text-foreground">
+                        <UserCheck className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                        <span className="truncate">{sos.assignedTo.name}</span>
+                      </p>
+                    ) : (
+                      <span className="text-xs font-medium text-muted-foreground">Unassigned</span>
+                    )}
+                  </div>
+                  <div className="xl:w-24 xl:text-right">
+                    <Button variant="outline" size="sm" className="w-full xl:w-auto" onClick={() => setManaging(sos)}>
+                      <Settings2 className="h-4 w-4" />
+                      Manage
+                    </Button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <EmptyState
+              icon={Siren}
+              title={hasFilters || status ? "No matching requests" : "No SOS requests yet"}
+              description={hasFilters || status ? "Try a different filter or search term." : "New requests will appear here as they come in."}
+            />
+          )}
+        </div>
+
+        {meta && meta.total > 0 && (
+          <div className="border-t border-border p-4">
+            <Pagination page={meta.page} totalPages={meta.totalPages} total={meta.total} pageSize={PAGE_SIZE} onChange={setPage} />
+          </div>
+        )}
+      </section>
+
+      {managing && (
+        <ManageDialog
+          sos={rows.find((r) => r.id === managing.id) ?? managing}
+          volunteers={volunteers}
+          onClose={() => setManaging(null)}
+          onStatus={(s) => updateStatus.mutate({ id: managing.id, status: s })}
+          onAssign={(v) => assignSos.mutate({ id: managing.id, volunteerId: v })}
+        />
       )}
     </div>
   );
 }
 
-function SosRow({
+function ManageDialog({
   sos,
-  index,
   volunteers,
+  onClose,
   onStatus,
   onAssign,
 }: {
   sos: SosRequest;
-  index: number;
   volunteers: { id: string; name: string }[];
-  onStatus: (status: SosStatus) => void;
-  onAssign: (volunteerId: string) => void;
+  onClose: () => void;
+  onStatus: (s: SosStatus) => void;
+  onAssign: (id: string) => void;
 }) {
-  const [manageOpen, setManageOpen] = useState(false);
   const photos = sos.photoUrls?.length ? sos.photoUrls : sos.photoUrl ? [sos.photoUrl] : [];
-
   return (
-    <MotionCard
-      variants={fade}
-      custom={index}
-      initial="hidden"
-      animate="visible"
-      className="relative overflow-hidden rounded-2xl border border-border bg-card p-5 pl-6"
-    >
-      <span
-        className={cn(
-          "absolute left-0 top-0 bottom-0 w-1.5",
-          PRIORITY_BAR[sos.priority] ?? "bg-muted-foreground",
-        )}
-        aria-hidden
-      />
-      <div className="flex flex-col lg:flex-row lg:items-start gap-4 justify-between">
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2 mb-1.5">
-            <SosPriorityBadge priority={sos.priority} />
-            <SosStatusBadge status={sos.status} />
-            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-              <Clock className="size-3" />
-              {new Date(sos.createdAt).toLocaleString()}
-            </span>
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Manage SOS request</DialogTitle>
+          <DialogDescription>
+            {sos.name} · {sos.district?.nameEn} · {timeAgo(sos.createdAt)}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex flex-col gap-5">
+          <div className="grid grid-cols-2 gap-3 rounded-2xl border border-border bg-muted/40 p-4 text-sm">
+            <div>
+              <p className="text-xs text-muted-foreground">Phone</p>
+              <a href={`tel:${sos.phone}`} className="font-semibold text-foreground hover:text-primary">
+                {sos.phone}
+              </a>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">People</p>
+              <p className="font-semibold text-foreground">{sos.peopleCount}</p>
+            </div>
+            <div className="col-span-2">
+              <p className="text-xs text-muted-foreground">Needs</p>
+              <p className="font-semibold capitalize text-foreground">{sos.helpType.join(", ")}</p>
+            </div>
+            {sos.addressText && (
+              <div className="col-span-2">
+                <p className="text-xs text-muted-foreground">Landmark</p>
+                <p className="text-foreground">{sos.addressText}</p>
+              </div>
+            )}
+            {sos.description && (
+              <div className="col-span-2">
+                <p className="text-xs text-muted-foreground">Message</p>
+                <p className="italic text-foreground">&ldquo;{sos.description}&rdquo;</p>
+              </div>
+            )}
           </div>
-          <p className="text-sm font-bold text-foreground">{sos.name}</p>
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-xs text-muted-foreground">
-            <a href={`tel:${sos.phone}`} className="inline-flex items-center gap-1 hover:text-primary">
-              <Phone className="h-3 w-3" /> {sos.phone}
-            </a>
-            <span className="inline-flex items-center gap-1">
-              <MapPin className="h-3 w-3" /> {sos.district?.nameEn}
-              {sos.addressText ? ` — ${sos.addressText}` : ""}
-            </span>
-            <span className="inline-flex items-center gap-1">
-              <Users className="h-3 w-3" /> {sos.peopleCount} people
-            </span>
-            <span className="capitalize">{sos.helpType.join(", ")}</span>
-          </div>
-          {sos.description && (
-            <p className="text-xs text-muted-foreground mt-2 italic">&ldquo;{sos.description}&rdquo;</p>
-          )}
+
           {photos.length > 0 && (
-            <div className="flex gap-2 mt-3">
+            <div className="flex gap-2">
               {photos.slice(0, 4).map((url, idx) => (
                 <a key={url} href={url} target="_blank" rel="noreferrer">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={url}
-                    alt={`SOS photo ${idx + 1}`}
-                    className="size-14 rounded-lg object-cover border border-border hover:scale-105 transition-transform"
-                  />
+                  <img src={url} alt={`SOS photo ${idx + 1}`} className="h-16 w-16 rounded-xl border border-border object-cover" />
                 </a>
               ))}
             </div>
           )}
-          {sos.assignedTo && (
-            <p className="text-xs font-semibold text-primary mt-2">
-              Assigned to: {sos.assignedTo.name}
-              {sos.assignedTo.phone ? ` (${sos.assignedTo.phone})` : ""}
-            </p>
-          )}
-        </div>
 
-        <div className="shrink-0 w-full lg:w-auto">
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full lg:w-auto gap-1.5 font-semibold"
-            onClick={() => setManageOpen(true)}
-          >
-            <Settings2 className="size-4" />
-            Manage
-          </Button>
-        </div>
-      </div>
-
-      <Dialog open={manageOpen} onOpenChange={setManageOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Manage SOS Request</DialogTitle>
-            <DialogDescription>
-              {sos.name} · {sos.district?.nameEn}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1.5">
-              <Label>Status</Label>
-              <Select value={sos.status} onValueChange={(status) => onStatus(status as SosStatus)}>
-                <SelectTrigger className="w-full rounded-lg">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {STATUS_OPTIONS.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {s.replace("_", " ")}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <Label>Assign volunteer</Label>
-              <Select
-                value={sos.assignedToId ?? ""}
-                onValueChange={(id) => id && onAssign(id as string)}
-              >
-                <SelectTrigger className="w-full rounded-lg">
-                  <SelectValue placeholder="Assign volunteer...">
-                    {(value: string) =>
-                      volunteers.find((v) => v.id === value)?.name ||
-                      sos.assignedTo?.name ||
-                      "Assign volunteer..."
-                    }
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {volunteers.length === 0 && (
-                    <p className="px-3 py-2 text-xs text-muted-foreground">
-                      No verified volunteers are available right now.
-                    </p>
-                  )}
-                  {volunteers.map((v) => (
-                    <SelectItem key={v.id} value={v.id}>
-                      {v.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <p className="text-xs text-muted-foreground">
-              Changes are saved automatically.
-            </p>
+          <div className="flex flex-col gap-1.5">
+            <Label>Status</Label>
+            <SearchableSelect
+              value={sos.status}
+              onValueChange={(v) => v && onStatus(v as SosStatus)}
+              options={STATUS_OPTIONS.map((st) => ({ value: st, label: st.replace("_", " ").toLowerCase().replace(/^\w/, (c) => c.toUpperCase()) }))}
+              searchPlaceholder="Search status…"
+            />
           </div>
-        </DialogContent>
-      </Dialog>
-    </MotionCard>
+
+          <div className="flex flex-col gap-1.5">
+            <Label>Assigned volunteer</Label>
+            <SearchableSelect
+              value={sos.assignedToId ?? ""}
+              onValueChange={(id) => id && onAssign(id)}
+              options={[
+                ...(sos.assignedTo && !volunteers.some((v) => v.id === sos.assignedToId)
+                  ? [{ value: sos.assignedTo.id, label: sos.assignedTo.name, description: "Currently assigned" }]
+                  : []),
+                ...volunteers.map((v) => ({ value: v.id, label: v.name })),
+              ]}
+              placeholder="Choose a volunteer…"
+              searchPlaceholder="Search volunteers…"
+              emptyText="No verified volunteers are available right now."
+            />
+          </div>
+        </div>
+        <DialogFooter className="sm:items-center sm:justify-between">
+          <p className="text-xs text-muted-foreground">Changes save automatically.</p>
+          <Button onClick={onClose}>Done</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

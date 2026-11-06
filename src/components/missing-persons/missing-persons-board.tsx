@@ -1,6 +1,8 @@
 "use client";
 
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useState } from "react";
+import { PageHero } from "@/components/public/page-hero";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import {
   Search,
@@ -12,24 +14,14 @@ import {
   EyeOff,
   CheckCircle2,
   Loader2,
-  ChevronLeft,
-  ChevronRight,
   RotateCcw,
+  Sparkles,
 } from "lucide-react";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -40,6 +32,7 @@ import {
 } from "@/components/ui/dialog";
 import { ImageUpload } from "@/components/dashboard/image-upload";
 import { EmptyState } from "@/components/dashboard/empty-state";
+import { Pagination } from "@/components/dashboard/pagination";
 import { useDistricts } from "@/lib/hooks/use-locations";
 import { useCurrentUser } from "@/lib/hooks/use-current-user";
 import {
@@ -73,27 +66,17 @@ function DistrictPicker({
 }) {
   const { data: districts } = useDistricts();
   const { t, pick } = useT();
-  const label = (id: string) => {
-    const d = districts?.find((x) => String(x.id) === id);
-    return d ? pick(d.nameEn, d.nameBn) : allowAll ? t("missing.allDistricts") : t("sos.selectDistrict");
-  };
   return (
-    <Select
+    <SearchableSelect
       value={value ? String(value) : allowAll ? "all" : ""}
       onValueChange={(v) => onChange(v && v !== "all" ? Number(v) : undefined)}
-    >
-      <SelectTrigger className="w-full data-[size=default]:h-11 rounded-xl">
-        <SelectValue placeholder={t("sos.selectDistrict")}>{(v: string) => label(v)}</SelectValue>
-      </SelectTrigger>
-      <SelectContent>
-        {allowAll && <SelectItem value="all">{t("missing.allDistricts")}</SelectItem>}
-        {districts?.map((d) => (
-          <SelectItem key={d.id} value={String(d.id)}>
-            {pick(d.nameEn, d.nameBn)}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+      options={[
+        ...(allowAll ? [{ value: "all", label: t("missing.allDistricts") }] : []),
+        ...(districts ?? []).map((d) => ({ value: String(d.id), label: pick(d.nameEn, d.nameBn), keywords: `${d.nameEn} ${d.nameBn}` })),
+      ]}
+      placeholder={t("sos.selectDistrict")}
+      searchPlaceholder={t("sos.selectDistrict")}
+    />
   );
 }
 
@@ -129,12 +112,13 @@ function ReportDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o:
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{t("missing.form.title")}</DialogTitle>
           <DialogDescription>{t("missing.form.consent")}</DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <div data-slot="modal-body" className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
             <Label>{t("missing.form.type")}</Label>
             <Controller
@@ -182,22 +166,12 @@ function ReportDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o:
                 name="gender"
                 control={control}
                 render={({ field }) => (
-                  <Select value={field.value ?? ""} onValueChange={(v) => field.onChange(v || undefined)}>
-                    <SelectTrigger className="w-full data-[size=default]:h-10 rounded-lg">
-                      <SelectValue placeholder="—">
-                        {(v: string) =>
-                          v ? t(`missing.form.${v as "male" | "female" | "other"}`) : "—"
-                        }
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(["male", "female", "other"] as const).map((g) => (
-                        <SelectItem key={g} value={g}>
-                          {t(`missing.form.${g}`)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <SearchableSelect
+                    value={field.value ?? ""}
+                    onValueChange={(v) => field.onChange(v || undefined)}
+                    options={(["male", "female", "other"] as const).map((g) => ({ value: g, label: t(`missing.form.${g}`) }))}
+                    placeholder="—"
+                  />
                 )}
               />
             </div>
@@ -231,7 +205,7 @@ function ReportDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o:
 
           <div className="flex flex-col gap-1.5">
             <Label>{t("missing.form.photo")}</Label>
-            <ImageUpload value={photo} onChange={setPhoto} />
+            <ImageUpload value={photo} onChange={setPhoto} folder="missing-persons" />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -250,6 +224,7 @@ function ReportDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o:
             </div>
           </div>
 
+          </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               {t("missing.form.cancel")}
@@ -265,84 +240,111 @@ function ReportDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o:
   );
 }
 
+const TYPE_STYLE = {
+  MISSING: { ribbon: "bg-destructive text-white", tint: "bg-destructive/10 text-destructive" },
+  FOUND: { ribbon: "bg-sky-600 text-white", tint: "bg-sky-500/10 text-sky-700" },
+  REUNITED: { ribbon: "bg-emerald-600 text-white", tint: "bg-emerald-500/10 text-emerald-700" },
+} as const;
+
 function PersonCard({ person, canModerate }: { person: MissingPerson; canModerate: boolean }) {
   const { t, pick, num, lang } = useT();
   const update = useUpdateMissingPersonStatus();
   const photo = person.photoUrls[0];
+  const kind = person.status === "REUNITED" ? "REUNITED" : person.type;
+  const style = TYPE_STYLE[kind];
+  const label =
+    kind === "REUNITED" ? t("missing.tab.reunited") : kind === "MISSING" ? t("missing.tab.missing") : t("missing.tab.found");
+  const initials = person.name
+    .split(" ")
+    .map((x) => x[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 
   return (
-    <Card className="rounded-3xl border border-border bg-card overflow-hidden flex flex-col">
-      <div className="relative aspect-4/3 bg-muted/40 flex items-center justify-center">
+    <article className="group flex flex-col overflow-hidden rounded-3xl border border-border bg-card transition-all duration-300 hover:-translate-y-1 hover:shadow-lift">
+      <div className="relative aspect-square overflow-hidden bg-muted">
         {photo ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={photo} alt={person.name} className="h-full w-full object-cover" loading="lazy" />
+          <img
+            src={photo}
+            alt={person.name}
+            loading="lazy"
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
         ) : (
-          <UserSearch className="size-10 text-muted-foreground/40" />
+          <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-accent">
+            <span className="flex h-24 w-24 items-center justify-center rounded-full bg-primary text-3xl font-bold text-lime">
+              {initials || <UserSearch className="size-10" />}
+            </span>
+            <span className="text-xs font-medium text-muted-foreground">{lang === "bn" ? "ছবি নেই" : "No photo yet"}</span>
+          </div>
         )}
-        <Badge
-          variant={person.status === "REUNITED" ? "success" : person.type === "MISSING" ? "danger" : "info"}
-          className="absolute top-3 left-3"
-          dot
-        >
-          {person.status === "REUNITED"
-            ? t("missing.tab.reunited")
-            : person.type === "MISSING"
-              ? t("missing.tab.missing")
-              : t("missing.tab.found")}
-        </Badge>
+        <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/80 via-black/40 to-transparent p-5 pt-20 text-white">
+          <h3 className="text-xl font-bold leading-tight tracking-tight">{person.name}</h3>
+          <p className="mt-1 text-sm text-white/80">
+            {[person.age != null ? `${t("missing.age")} ${num(person.age)}` : null, person.gender ? t(`missing.form.${person.gender}`) : null]
+              .filter(Boolean)
+              .join(" · ")}
+          </p>
+        </div>
+        <span className={cn("absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold shadow-lg", style.ribbon)}>
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
+          {label}
+        </span>
+        <span className="absolute right-4 top-4 rounded-full bg-black/45 px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur">
+          {lang === "bn" ? new Date(person.createdAt).toLocaleDateString("bn-BD") : timeAgo(person.createdAt)}
+        </span>
       </div>
 
-      <div className="p-5 flex flex-col gap-2.5 flex-1">
-        <div>
-          <h3 className="text-base font-bold text-foreground">{person.name}</h3>
-          <p className="text-xs text-muted-foreground">
-            {person.age != null && `${t("missing.age")} ${num(person.age)} · `}
-            {person.gender && `${t(`missing.form.${person.gender}`)} · `}
-            {lang === "bn" ? new Date(person.createdAt).toLocaleDateString("bn-BD") : timeAgo(person.createdAt)}
-          </p>
+      <div className="flex flex-1 flex-col gap-3 p-5">
+        <div className="flex items-start gap-3 rounded-2xl bg-muted/50 p-3.5">
+          <span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-xl", style.tint)}>
+            <MapPin className="size-4" />
+          </span>
+          <div className="min-w-0 text-sm">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              {person.type === "FOUND" ? t("missing.foundAt") : t("missing.lastSeen")}
+            </p>
+            <p className="mt-0.5 font-medium text-foreground">
+              {person.lastSeenText}, {pick(person.district.nameEn, person.district.nameBn)}
+            </p>
+          </div>
         </div>
 
-        <p className="flex items-start gap-1.5 text-sm text-foreground">
-          <MapPin className="size-4 shrink-0 mt-0.5 text-muted-foreground" />
-          <span>
-            <span className="text-muted-foreground">
-              {person.type === "FOUND" ? t("missing.foundAt") : t("missing.lastSeen")}:{" "}
-            </span>
-            {person.lastSeenText}, {pick(person.district.nameEn, person.district.nameBn)}
+        {person.description && <p className="line-clamp-3 text-sm leading-relaxed text-muted-foreground">{person.description}</p>}
+
+        <div className="mt-auto flex items-center gap-3 rounded-2xl border border-border p-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-lime">
+            {person.reporterName.slice(0, 1).toUpperCase()}
           </span>
-        </p>
-
-        {person.description && <p className="text-sm text-muted-foreground line-clamp-3">{person.description}</p>}
-
-        <div className="mt-auto pt-3 border-t border-border flex flex-col gap-1.5">
-          <p className="text-xs text-muted-foreground">
-            {t("missing.reportedBy")}: <span className="font-semibold text-foreground">{person.reporterName}</span>
-          </p>
-          <p className="flex items-center gap-1.5 text-sm font-mono">
-            <Phone className="size-3.5 text-muted-foreground" />
-            {person.contactHidden ? (
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-semibold text-foreground">{person.reporterName}</p>
+            <p className="flex items-center gap-1.5 font-mono text-xs text-muted-foreground">
+              <Phone className="size-3" />
               <span lang="en">{person.reporterPhone}</span>
-            ) : (
-              <a href={`tel:${person.reporterPhone}`} className="text-primary hover:underline">
-                {person.reporterPhone}
-              </a>
-            )}
-          </p>
-          {person.contactHidden && (
-            <p className="flex items-start gap-1.5 text-[11px] text-muted-foreground">
-              <EyeOff className="size-3 shrink-0 mt-0.5" />
-              {t("missing.contactHidden")}
+              {person.contactHidden && <EyeOff className="size-3" aria-label={t("missing.contactHidden")} />}
             </p>
+          </div>
+          {!person.contactHidden && (
+            <a
+              href={`tel:${person.reporterPhone}`}
+              className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-primary px-3.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+            >
+              <Phone className="size-3.5 text-lime" />
+              {lang === "bn" ? "ফোন" : "Call"}
+            </a>
           )}
         </div>
+        {person.contactHidden && <p className="text-[11px] leading-snug text-muted-foreground">{t("missing.contactHidden")}</p>}
 
         {canModerate && (
-          <div className="flex gap-2 pt-1">
+          <div className="flex gap-2">
             {person.status === "OPEN" ? (
               <Button
                 size="sm"
                 variant="success-outline"
-                className="gap-1.5 flex-1"
+                className="flex-1 gap-1.5"
                 disabled={update.isPending}
                 onClick={() => update.mutate({ id: person.id, status: "REUNITED" })}
               >
@@ -353,7 +355,7 @@ function PersonCard({ person, canModerate }: { person: MissingPerson; canModerat
               <Button
                 size="sm"
                 variant="outline"
-                className="gap-1.5 flex-1"
+                className="flex-1 gap-1.5"
                 disabled={update.isPending}
                 onClick={() => update.mutate({ id: person.id, status: "OPEN" })}
               >
@@ -364,7 +366,7 @@ function PersonCard({ person, canModerate }: { person: MissingPerson; canModerat
           </div>
         )}
       </div>
-    </Card>
+    </article>
   );
 }
 
@@ -403,19 +405,31 @@ export function MissingPersonsBoard({ embedded = false }: { embedded?: boolean }
   return (
     <div className="flex flex-col gap-6">
       {!embedded && (
-        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-          <div className="max-w-2xl">
-            <div className="inline-flex items-center justify-center size-12 rounded-2xl bg-primary/10 text-primary mb-4">
-              <UserSearch className="size-6" />
-            </div>
-            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-foreground">{t("missing.title")}</h1>
-            <p className="text-sm md:text-base text-muted-foreground mt-2">{t("missing.subtitle")}</p>
-          </div>
-          <Button className="gap-2 font-semibold self-start md:self-auto" onClick={() => setReportOpen(true)}>
-            <Plus className="size-4" />
-            {t("missing.report")}
-          </Button>
-        </div>
+        <PageHero
+          icon={UserSearch}
+          crumb={t("missing.title")}
+          title={t("missing.title")}
+          description={t("missing.subtitle")}
+          statsTitle={t("missing.statsTitle")}
+          stats={[
+            { label: t("missing.stats.missing"), value: summary ? num(summary.openMissing) : undefined, icon: UserSearch, tone: "alert" },
+            { label: t("missing.stats.found"), value: summary ? num(summary.openFound) : undefined, icon: HeartHandshake },
+            { label: t("missing.stats.reunited"), value: summary ? num(summary.reunited) : undefined, icon: CheckCircle2 },
+            {
+              label: t("missing.stats.rate"),
+              value: summary
+                ? `${Math.round((summary.reunited / Math.max(1, summary.openMissing + summary.openFound + summary.reunited)) * 100)}%`
+                : undefined,
+              icon: Sparkles,
+            },
+          ]}
+          aside={
+            <Button size="lg" className="h-12 px-6" onClick={() => setReportOpen(true)}>
+              <Plus className="size-4 text-lime" />
+              {t("missing.report")}
+            </Button>
+          }
+        />
       )}
 
       {embedded && (
@@ -427,74 +441,83 @@ export function MissingPersonsBoard({ embedded = false }: { embedded?: boolean }
         </div>
       )}
 
-      <div className="flex flex-wrap gap-2" role="tablist">
-        {tabs.map(({ id, label, count, icon: Icon }) => (
-          <button
-            key={id}
-            type="button"
-            role="tab"
-            aria-selected={tab === id}
-            onClick={() => {
-              setTab(id);
-              setPage(1);
-            }}
-            className={cn(
-              "inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-colors",
-              tab === id ? "border-primary bg-primary text-primary-foreground" : "border-border hover:bg-muted/50",
-            )}
-          >
-            <Icon className="size-4" />
-            {label}
-            {count != null && (
-              <span
+      <div className="overflow-hidden rounded-3xl border border-border bg-card">
+        <div className="grid grid-cols-1 gap-2 border-b border-border p-3 sm:grid-cols-3" role="tablist">
+          {tabs.map(({ id, label, count, icon: Icon }) => {
+            const on = tab === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                aria-selected={on}
+                onClick={() => {
+                  setTab(id);
+                  setPage(1);
+                }}
                 className={cn(
-                  "rounded-full px-2 text-xs tabular-nums",
-                  tab === id ? "bg-primary-foreground/20" : "bg-muted text-muted-foreground",
+                  "flex items-center gap-3 rounded-2xl p-3.5 text-left transition-colors",
+                  on ? "bg-primary text-primary-foreground" : "hover:bg-muted/60",
                 )}
               >
-                {num(count)}
-              </span>
-            )}
-          </button>
-        ))}
-      </div>
-
-      <form
-        className="grid grid-cols-1 md:grid-cols-[1fr_260px] gap-3"
-        onSubmit={(e) => {
-          e.preventDefault();
-          setSearch(q.trim());
-          setPage(1);
-        }}
-      >
-        <div className="relative">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-          <Input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            onBlur={() => {
-              setSearch(q.trim());
-              setPage(1);
-            }}
-            placeholder={t("missing.search")}
-            className="h-11 pl-10 rounded-xl"
-            aria-label={t("missing.search")}
-          />
+                <span className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-xl", on ? "bg-lime text-lime-foreground" : "bg-muted text-muted-foreground")}>
+                  <Icon className="size-5" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-semibold">{label}</span>
+                  <span className={cn("block text-2xl font-bold tabular-nums leading-tight", on ? "text-white" : "text-foreground")}>
+                    {count != null ? num(count) : "—"}
+                  </span>
+                </span>
+              </button>
+            );
+          })}
         </div>
-        <DistrictPicker
-          allowAll
-          value={districtId}
-          onChange={(id) => {
-            setDistrictId(id);
+
+        <form
+          className="grid grid-cols-1 gap-3 p-3 md:grid-cols-[1fr_280px]"
+          onSubmit={(e) => {
+            e.preventDefault();
+            setSearch(q.trim());
             setPage(1);
           }}
-        />
-      </form>
+        >
+          <div className="relative">
+            <Search className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              onBlur={() => {
+                setSearch(q.trim());
+                setPage(1);
+              }}
+              placeholder={t("missing.search")}
+              className="h-12 pl-10"
+              aria-label={t("missing.search")}
+            />
+          </div>
+          <DistrictPicker
+            allowAll
+            value={districtId}
+            onChange={(id) => {
+              setDistrictId(id);
+              setPage(1);
+            }}
+          />
+        </form>
+      </div>
 
       {isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-80 rounded-3xl" />
+            <div key={i} className="overflow-hidden rounded-3xl border border-border bg-card">
+              <Skeleton className="aspect-4/5 w-full rounded-none" />
+              <div className="flex flex-col gap-3 p-5">
+                <Skeleton className="h-16 w-full rounded-2xl" />
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-14 w-full rounded-2xl" />
+              </div>
+            </div>
           ))}
         </div>
       ) : data && data.data.length > 0 ? (
@@ -509,31 +532,37 @@ export function MissingPersonsBoard({ embedded = false }: { embedded?: boolean }
           ))}
         </div>
       ) : (
-        <Card className="rounded-3xl border border-border bg-card">
-          <EmptyState icon={UserSearch} title={t("missing.empty")} />
-        </Card>
+        <div className="rounded-2xl border border-border bg-card">
+          <EmptyState
+            icon={UserSearch}
+            title={search || districtId ? t("missing.empty") : t("missing.emptyTitle")}
+            description={search || districtId ? t("missing.emptySearchHint") : t("missing.emptyHint")}
+            action={
+              <>
+                {(search || districtId) && (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setQ("");
+                      setSearch("");
+                      setDistrictId(undefined);
+                    }}
+                  >
+                    {t("missing.clear")}
+                  </Button>
+                )}
+                <Button onClick={() => setReportOpen(true)}>
+                  <Plus className="size-4 text-lime" />
+                  {t("missing.report")}
+                </Button>
+              </>
+            }
+          />
+        </div>
       )}
 
-      {data && data.meta.totalPages > 1 && (
-        <div className="flex items-center justify-center gap-3">
-          <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)} className="gap-1">
-            <ChevronLeft className="size-4" />
-            {t("missing.prev")}
-          </Button>
-          <span className="text-sm text-muted-foreground">
-            {t("missing.page")} {num(page)} / {num(data.meta.totalPages)}
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={page >= data.meta.totalPages}
-            onClick={() => setPage((p) => p + 1)}
-            className="gap-1"
-          >
-            {t("missing.next")}
-            <ChevronRight className="size-4" />
-          </Button>
-        </div>
+      {data && data.meta.total > 0 && (
+        <Pagination page={page} totalPages={data.meta.totalPages} total={data.meta.total} pageSize={12} onChange={setPage} />
       )}
 
       <ReportDialog key={user?.id ?? "anon"} open={reportOpen} onOpenChange={setReportOpen} />

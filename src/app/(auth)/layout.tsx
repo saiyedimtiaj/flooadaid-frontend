@@ -16,6 +16,7 @@ export default function AuthLayout({
           alt=""
           fill
           priority
+          sizes="(min-width: 1280px) 55vw, 52vw"
           className="object-cover"
         />
 

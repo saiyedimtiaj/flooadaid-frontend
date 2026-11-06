@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function TrackerPage() {
   return (
-    <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-16">
+    <div>
       <Suspense fallback={null}>
         <TrackerContent />
       </Suspense>

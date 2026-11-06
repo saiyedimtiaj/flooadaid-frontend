@@ -1,4 +1,5 @@
 import { Metadata } from "next"
+import { Suspense } from "react"
 import SheltersContent from "./_ui/shelters-content"
 
 export const metadata: Metadata = {
@@ -7,5 +8,9 @@ export const metadata: Metadata = {
 }
 
 export default function SheltersPage() {
-  return <SheltersContent />
+  return (
+    <Suspense fallback={null}>
+      <SheltersContent />
+    </Suspense>
+  )
 }

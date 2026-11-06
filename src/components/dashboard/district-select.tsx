@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useDistricts } from "@/lib/hooks/use-locations";
 
 export function DistrictSelect({
@@ -19,27 +13,18 @@ export function DistrictSelect({
   placeholder?: string;
 }) {
   const { data: districts, isLoading } = useDistricts();
+  const options = (districts ?? [])
+    .map((d) => ({ value: String(d.id), label: d.nameEn, keywords: d.nameBn }))
+    .sort((a, b) => a.label.localeCompare(b.label));
 
   return (
-    <Select
+    <SearchableSelect
       value={value ? String(value) : ""}
-      onValueChange={(val) => onChange(Number(val))}
+      onValueChange={(v) => v && onChange(Number(v))}
+      options={options}
       disabled={isLoading}
-    >
-      <SelectTrigger className="w-full data-[size=default]:h-10 rounded-lg">
-        <SelectValue placeholder={isLoading ? "Loading districts..." : placeholder}>
-          {(val: string) =>
-            districts?.find((d) => String(d.id) === val)?.nameEn ?? placeholder
-          }
-        </SelectValue>
-      </SelectTrigger>
-      <SelectContent>
-        {districts?.map((district) => (
-          <SelectItem key={district.id} value={String(district.id)}>
-            {district.nameEn}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+      placeholder={isLoading ? "Loading districts..." : placeholder}
+      searchPlaceholder="Search district…"
+    />
   );
 }

@@ -62,7 +62,8 @@ function StockSheet({
         <SheetHeader>
           <SheetTitle>{editing ? "Update stock" : "Add stock item"}</SheetTitle>
         </SheetHeader>
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 px-4">
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <div data-slot="modal-body" className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
             <Label>Item name</Label>
             <Input
@@ -81,7 +82,8 @@ function StockSheet({
               <Input type="number" {...register("quantity", { required: true, valueAsNumber: true })} />
             </div>
           </div>
-          <SheetFooter className="px-0">
+          </div>
+          <SheetFooter>
             <Button type="submit" disabled={upsert.isPending} className="font-semibold">
               {editing ? "Update Stock" : "Add Item"}
             </Button>

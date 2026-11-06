@@ -21,33 +21,46 @@ interface PublicHeroProps {
  */
 export function PublicHero({ eyebrow, icon: Icon, title, description, breadcrumb }: PublicHeroProps) {
   return (
-    <section className="relative overflow-hidden border-b border-border bg-linear-to-br from-primary/8 via-transparent to-destructive/5 pt-28 pb-14">
-      <div
-        className="absolute inset-0 bg-[radial-gradient(ellipse_55%_60%_at_20%_0%,color-mix(in_oklch,var(--color-primary)_10%,transparent),transparent)] pointer-events-none"
+    <section className="relative overflow-hidden bg-night text-white pt-32 pb-24 md:pb-28">
+      <div className="absolute inset-0 bg-dots opacity-30" aria-hidden="true" />
+      <div className="absolute -top-24 right-[10%] h-96 w-96 rounded-full bg-brand-blue/45 blur-3xl" aria-hidden="true" />
+      <div className="absolute -bottom-40 left-[5%] h-96 w-96 rounded-full bg-brand-cyan/30 blur-3xl" aria-hidden="true" />
+      <svg
+        className="absolute inset-x-0 -bottom-px h-16 md:h-20 w-full text-background"
+        viewBox="0 0 1200 120"
+        preserveAspectRatio="none"
         aria-hidden="true"
-      />
-      <div className="relative container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl">
+      >
+        <path fill="currentColor" opacity="0.35" d="M0 50c150 40 300 50 450 24S750 10 900 26s300 44 300 44v50H0z" />
+        <path fill="currentColor" d="M0 80c150-28 300-34 450-14s300 42 450 30 300-36 300-36v60H0z" />
+      </svg>
+
+      <div className="relative container mx-auto px-4 sm:px-6 lg:px-8 max-w-5xl">
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
           className="flex flex-col items-start"
         >
-          <div className="flex items-center gap-1 text-xs font-semibold text-muted-foreground select-none mb-5">
-            <Link href="/" className="hover:text-foreground transition-colors">Home</Link>
+          <div className="flex items-center gap-1 text-xs font-semibold text-white/60 select-none mb-6">
+            <Link href="/" className="hover:text-white transition-colors">Home</Link>
             <ChevronRight className="h-3 w-3" />
-            <span className="text-foreground">{breadcrumb ?? eyebrow}</span>
+            <span className="text-white">{breadcrumb ?? eyebrow}</span>
           </div>
 
-          <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 mb-4">
-            <Icon className="h-3.5 w-3.5 text-primary" />
-            <span className="text-[11px] font-bold uppercase tracking-wider text-primary">{eyebrow}</span>
+          <div className="flex items-center gap-4 mb-5">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand shadow-[0_12px_32px_-8px_oklch(0.6_0.18_230/0.8)]">
+              <Icon className="h-7 w-7" />
+            </div>
+            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 ring-1 ring-white/15 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-brand-cyan">
+              {eyebrow}
+            </span>
           </div>
 
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight text-foreground text-balance">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-balance">
             {title}
           </h1>
-          <p className="mt-4 text-base md:text-lg text-muted-foreground max-w-2xl leading-relaxed">
+          <p className="mt-5 text-base md:text-xl text-white/70 max-w-2xl leading-relaxed">
             {description}
           </p>
         </motion.div>

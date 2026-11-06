@@ -1,5 +1,6 @@
 "use client";
 
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { motion } from "framer-motion";
@@ -22,13 +23,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { LocationPicker } from "@/components/map/location-picker";
 import { DistrictSelect } from "@/components/dashboard/district-select";
 import { NearbyHelpPanel } from "@/components/sos/nearby-help-panel";
@@ -187,22 +181,13 @@ export function ManualSosForm() {
                   name="peopleCount"
                   control={control}
                   render={({ field }) => (
-                    <Select value={field.value ?? ""} onValueChange={field.onChange}>
-                      <SelectTrigger className="w-full rounded-lg">
-                        <SelectValue placeholder="Select...">
-                          {(val: string) =>
-                            PEOPLE_OPTIONS.find((o) => o.value === val)?.label ?? "Select..."
-                          }
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent>
-                        {PEOPLE_OPTIONS.map((o) => (
-                          <SelectItem key={o.value} value={o.value}>
-                            {o.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <SearchableSelect
+                      value={field.value ?? ""}
+                      onValueChange={(v) => v && field.onChange(v)}
+                      options={PEOPLE_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+                      placeholder="Select..."
+                      searchPlaceholder="Search…"
+                    />
                   )}
                 />
               </div>

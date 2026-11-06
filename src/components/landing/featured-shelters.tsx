@@ -49,7 +49,7 @@ function statusThemeFor(occupancyRate: number) {
   if (occupancyRate >= 80) {
     return {
       label: "Near Capacity",
-      tint: "bg-destructive/10",
+      tint: "bg-linear-to-br from-[oklch(0.64_0.22_22)] to-[oklch(0.5_0.21_10)]",
       text: "text-destructive",
       ring: "stroke-destructive",
       solid: "bg-destructive",
@@ -59,7 +59,7 @@ function statusThemeFor(occupancyRate: number) {
   if (occupancyRate >= 50) {
     return {
       label: "Filling Fast",
-      tint: "bg-amber-500/10",
+      tint: "bg-linear-to-br from-[oklch(0.8_0.16_72)] to-[oklch(0.66_0.19_45)]",
       text: "text-amber-600 dark:text-amber-500",
       ring: "stroke-amber-500",
       solid: "bg-amber-500",
@@ -68,7 +68,7 @@ function statusThemeFor(occupancyRate: number) {
   }
   return {
     label: "Open",
-    tint: "bg-emerald-500/10",
+    tint: "bg-linear-to-br from-[oklch(0.7_0.15_165)] to-[oklch(0.52_0.12_190)]",
     text: "text-emerald-600 dark:text-emerald-500",
     ring: "stroke-emerald-500",
     solid: "bg-emerald-500",
@@ -86,31 +86,32 @@ function ShelterCard({ shelter }: { shelter: Shelter }) {
   return (
     <motion.div
       variants={cardVariants}
-      className="group relative overflow-hidden h-full rounded-2xl flex flex-col border border-border bg-card transition-all duration-300 ease-out"
+      className="group relative overflow-hidden h-full rounded-[1.75rem] flex flex-col bg-card shadow-soft ring-1 ring-border/70 transition-all duration-500 ease-out hover:-translate-y-1.5 hover:shadow-lift"
     >
-      <div className={`relative overflow-hidden px-5 pt-5 pb-8 ${status.tint}`}>
+      <div className={`relative overflow-hidden px-6 pt-6 pb-10 text-white ${status.tint}`}>
+        <div className="absolute inset-0 bg-dots opacity-35" aria-hidden />
         <Home
-          className="absolute -right-3 -top-3 h-24 w-24 text-foreground/5 rotate-[-8deg] pointer-events-none transition-transform duration-500 group-hover:rotate-0 group-hover:scale-105"
+          className="absolute -right-3 -top-3 h-28 w-28 text-white/15 rotate-[-8deg] pointer-events-none transition-transform duration-500 group-hover:rotate-0 group-hover:scale-105"
           strokeWidth={1.5}
         />
         <span
-          className={`relative inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${status.text} bg-background/70 backdrop-blur-xs`}
+          className="relative inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider text-white bg-white/20 ring-1 ring-white/30 backdrop-blur-xs"
         >
-          <span className={`h-1.5 w-1.5 rounded-full ${status.solid}`} />
+          <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
           {status.label}
         </span>
 
-        <h3 className="relative text-base font-bold text-foreground leading-snug mt-3 pr-14">
+        <h3 className="relative text-lg font-extrabold text-white leading-snug mt-3 pr-14">
           {pick(shelter.name, shelter.nameBn)}
         </h3>
-        <div className="relative flex items-center gap-1 text-muted-foreground mt-1">
+        <div className="relative flex items-center gap-1 text-white/80 mt-1">
           <MapPin className="h-3 w-3 shrink-0" />
           <span className="text-xs font-medium truncate">{location}</span>
         </div>
       </div>
 
-      <div className="relative flex flex-col justify-between h-full flex-1 gap-5 p-5 -mt-5">
-        <div className="flex items-center gap-4 rounded-xl border border-border bg-background p-3">
+      <div className="relative flex flex-col justify-between h-full flex-1 gap-5 p-5 -mt-6">
+        <div className="flex items-center gap-4 rounded-2xl bg-card p-3.5 shadow-soft ring-1 ring-border/70">
           <div className="relative h-16 w-16 shrink-0">
             <svg viewBox="0 0 72 72" className="h-16 w-16 -rotate-90">
               <circle cx="36" cy="36" r={RING_RADIUS} fill="none" strokeWidth="6" className="stroke-muted" />
@@ -191,20 +192,23 @@ export default function FeaturedShelters() {
   const shelters = data?.data ?? [];
 
   return (
-    <section className="relative my-16 md:my-20 w-full bg-background">
+    <section className="relative my-6 md:my-20 w-full bg-background">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col gap-8">
         <div className="flex flex-row items-end justify-between gap-4">
           <div>
-            <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
-              Open Shelters
+            <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-3.5 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-600">
+              Safe places
+            </span>
+            <h2 className="mt-3 text-3xl md:text-4xl font-extrabold tracking-tight text-foreground">
+              Open <span className="text-brand">Shelters</span>
             </h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              Emergency shelters currently accepting people
+            <p className="text-sm md:text-base text-muted-foreground mt-2">
+              Emergency shelters currently accepting people — live capacity
             </p>
           </div>
 
           <div className="hidden md:block shrink-0">
-            <Button variant="outline" nativeButton={false} render={<Link href="/shelters" className="flex items-center gap-1.5" />}>
+            <Button nativeButton={false} className="rounded-full px-5" render={<Link href="/shelters" className="flex items-center gap-1.5" />}>
                 View All Shelters
                 <ArrowRight className="h-4 w-4" />
               </Button>

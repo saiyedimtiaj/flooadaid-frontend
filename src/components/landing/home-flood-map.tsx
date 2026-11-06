@@ -1,9 +1,10 @@
 "use client";
+import { MapSkeleton } from "@/components/ui/map-skeleton";
 
 import { useRef, useState } from "react";
 import { MapContainer, TileLayer, CircleMarker, Popup, useMapEvents } from "react-leaflet";
 import type { LeafletEventHandlerFnMap } from "leaflet";
-import { ArrowRight, MapPin, Siren, Clock, Radar, Home, Loader2 } from "lucide-react";
+import { ArrowRight, MapPin, Siren, Clock, Radar, Home } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useTheme } from "next-themes";
@@ -84,7 +85,7 @@ export default function HomeFloodMap() {
   const updatedAt = data?.lastAlertUpdate ?? data?.generatedAt;
 
   return (
-    <section className="relative my-16 md:my-20 w-full bg-background">
+    <section className="relative my-6 md:my-20 w-full bg-background">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col gap-6">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -94,17 +95,17 @@ export default function HomeFloodMap() {
           className="flex flex-col sm:flex-row sm:items-end justify-between gap-4"
         >
           <div className="flex items-start gap-3">
-            <div className="hidden sm:flex items-center justify-center h-11 w-11 rounded-xl bg-destructive/10 text-destructive shrink-0 mt-0.5">
+            <div className="hidden sm:flex items-center justify-center h-14 w-14 rounded-2xl bg-brand text-white shadow-lift shrink-0">
               <Radar className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">{t("map.title")}</h2>
-              <p className="text-sm text-muted-foreground mt-1">{t("map.subtitle")}</p>
+              <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-foreground">{t("map.title")}</h2>
+              <p className="text-sm md:text-base text-muted-foreground mt-1.5">{t("map.subtitle")}</p>
             </div>
           </div>
           <Link
             href="/alerts"
-            className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline group shrink-0"
+            className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-4 py-2 text-sm font-semibold text-primary hover:bg-primary/15 group shrink-0"
           >
             {t("map.viewAlerts")}
             <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
@@ -112,16 +113,18 @@ export default function HomeFloodMap() {
         </motion.div>
 
         <div className="relative rounded-2xl bg-linear-to-br from-primary/15 via-border/40 to-transparent p-px">
-          <div className="relative overflow-hidden rounded-2xl border border-border bg-card h-95 md:h-130 w-full z-10">
+          <div className="relative overflow-hidden rounded-[2rem] bg-card shadow-lift ring-1 ring-border/70 h-95 md:h-130 w-full z-10">
             <MapContainer
               center={[23.685, 90.3563]}
               zoom={7}
               className="h-full w-full"
               scrollWheelZoom={false}
               zoomControl={true}
-              attributionControl={false}
             >
-              <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" />
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
               <MapScrollControl hint={lang === "bn" ? "জুম করতে Ctrl + স্ক্রল করুন" : "Use Ctrl + Scroll to zoom"} />
 
               {active.map((d) => {
@@ -193,11 +196,15 @@ export default function HomeFloodMap() {
               })}
             </MapContainer>
 
-            {(isLoading || isError) && (
-              <div className="absolute inset-0 z-1000 flex items-center justify-center bg-background/60 backdrop-blur-[1px]">
-                <span className="inline-flex items-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="size-4 animate-spin" />
-                  {isError ? t("map.error") : t("map.loading")}
+            {isLoading && (
+              <div className="absolute inset-0 z-1000">
+                <MapSkeleton label={t("map.loading")} />
+              </div>
+            )}
+            {isError && (
+              <div className="absolute inset-0 z-1000 flex items-center justify-center bg-background/70">
+                <span className="rounded-full bg-card px-4 py-2 text-sm font-medium text-muted-foreground ring-1 ring-border">
+                  {t("map.error")}
                 </span>
               </div>
             )}

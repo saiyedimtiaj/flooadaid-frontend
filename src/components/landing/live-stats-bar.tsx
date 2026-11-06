@@ -3,8 +3,8 @@
 import { useRef } from "react";
 import { AlertTriangle, Home, LifeBuoy, MapPinned, ArrowUpRight, Clock } from "lucide-react";
 import { motion, useInView, Variants } from "framer-motion";
-import { Card, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import type { LucideIcon } from "lucide-react";
+import { StatCard } from "@/components/dashboard/stat-card";
 import { useAlerts } from "@/lib/hooks/use-alerts";
 import { useShelters } from "@/lib/hooks/use-shelters";
 import { usePublicSosStats } from "@/lib/hooks/use-sos";
@@ -21,6 +21,8 @@ interface StatItem {
   };
   progressValue?: number;
   progressText?: string;
+  href: string;
+  footer: string;
 }
 
 export default function LiveStatsBar() {
@@ -42,6 +44,8 @@ export default function LiveStatsBar() {
       label: "Districts Affected",
       number: districtsAffected ? String(districtsAffected) : "0",
       trend: { icon: Clock, text: "Live count", type: "neutral" },
+      href: "/alerts",
+      footer: "See districts",
     },
     {
       icon: MapPinned,
@@ -49,6 +53,8 @@ export default function LiveStatsBar() {
       label: "Active Alerts",
       number: activeAlerts ? String(activeAlerts.meta.total) : "—",
       trend: { icon: ArrowUpRight, text: "Updated in real time", type: "neutral" },
+      href: "/alerts",
+      footer: "View alerts",
     },
     {
       icon: Home,
@@ -56,6 +62,8 @@ export default function LiveStatsBar() {
       label: "Shelters Open",
       number: shelters ? String(shelters.meta.total) : "—",
       trend: { icon: ArrowUpRight, text: "Across Bangladesh", type: "positive" },
+      href: "/shelters",
+      footer: "Find a shelter",
     },
     {
       icon: LifeBuoy,
@@ -64,6 +72,8 @@ export default function LiveStatsBar() {
       number: sosStats ? `${sosStats.resolved} / ${sosStats.total}` : "—",
       progressValue: resolutionRate,
       progressText: `${resolutionRate}% resolution rate`,
+      href: "/tracker",
+      footer: "Track an SOS",
     },
   ];
 
@@ -86,7 +96,7 @@ export default function LiveStatsBar() {
   };
 
   return (
-    <div className="relative z-30 w-full mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 -mt-10 md:-mt-14 mb-8">
+    <div className="relative z-30 w-full mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 -mt-10 md:-mt-14 mb-6 md:mb-20">
       <motion.div
         ref={containerRef}
         initial="hidden"
@@ -100,7 +110,17 @@ export default function LiveStatsBar() {
             variants={cardVariants}
             className="h-full motion-reduce:opacity-100 motion-reduce:transform-none motion-reduce:transition-none"
           >
-            <StatCard {...stat} />
+            <StatCard
+              label={stat.label}
+              value={stat.number}
+              icon={stat.icon as LucideIcon}
+              sub={stat.trend?.text ?? stat.progressText}
+              tint={stat.accentColor === "primary" ? "primary" : stat.accentColor}
+              href={stat.href}
+              footerLabel={stat.footer}
+              highlight={stat.accentColor === "primary"}
+              isLoading={!activeAlerts || !shelters || !sosStats}
+            />
           </motion.div>
         ))}
       </motion.div>
@@ -108,104 +128,3 @@ export default function LiveStatsBar() {
   );
 }
 
-function StatCard({
-  icon: Icon,
-  accentColor,
-  label,
-  number,
-  trend,
-  progressValue,
-  progressText,
-}: StatItem) {
-  const themeClasses = {
-    destructive: {
-      border: "border-l-[var(--destructive)]",
-      iconContainer: "bg-destructive/10 text-destructive",
-      hoverTint: "hover:bg-destructive/[0.015]",
-    },
-    warning: {
-      border: "border-l-amber-500",
-      iconContainer: "bg-amber-500/10 text-amber-600 dark:text-amber-500",
-      hoverTint: "hover:bg-amber-500/[0.015]",
-    },
-    success: {
-      border: "border-l-emerald-500",
-      iconContainer: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-500",
-      hoverTint: "hover:bg-emerald-500/[0.015]",
-    },
-    primary: {
-      border: "border-l-primary",
-      iconContainer: "bg-primary/10 text-primary",
-      hoverTint: "hover:bg-primary/[0.015]",
-    },
-  };
-
-  const trendColorClasses = {
-    positive: "text-emerald-600 dark:text-emerald-500 font-semibold",
-    negative: "text-destructive font-semibold",
-    neutral: "text-muted-foreground font-medium",
-  };
-
-  const currentTheme = themeClasses[accentColor];
-
-  return (
-    <Card
-      className={`
-        relative overflow-hidden h-full border-y border-r border-l-0 border-border
-        ${currentTheme.border} border-l-[3px]
-        ${currentTheme.hoverTint}
-        bg-card hover:bg-card/90 text-card-foreground
-        hover:-translate-y-0.5 transition-all duration-200 ease-out
-        group flex flex-col justify-between
-      `}
-    >
-      <CardContent className="p-4 sm:p-5 flex flex-col justify-between h-full gap-4">
-        <div className="flex flex-col gap-3">
-          <div
-            className={`
-              flex items-center justify-center h-10 w-10 rounded-lg shrink-0
-              ${currentTheme.iconContainer}
-              transition-transform duration-200 group-hover:scale-102
-            `}
-          >
-            <Icon className="h-5 w-5" />
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground leading-none">
-              {label}
-            </span>
-            <span className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground tabular-nums leading-none">
-              {number}
-            </span>
-          </div>
-        </div>
-
-        <div className="mt-auto">
-          {trend && (
-            <div className="flex items-center gap-1 leading-none mt-1">
-              <trend.icon className={`h-3.5 w-3.5 shrink-0 ${trendColorClasses[trend.type]}`} />
-              <span className={`text-[11px] sm:text-xs ${trendColorClasses[trend.type]}`}>
-                {trend.text}
-              </span>
-            </div>
-          )}
-
-          {progressValue !== undefined && (
-            <div className="flex flex-col gap-1.5 w-full mt-1">
-              <Progress
-                value={progressValue}
-                className="h-1.5 w-full bg-slate-100 dark:bg-slate-800"
-              />
-              {progressText && (
-                <span className="text-[10px] sm:text-[11px] font-medium text-muted-foreground leading-none">
-                  {progressText}
-                </span>
-              )}
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}

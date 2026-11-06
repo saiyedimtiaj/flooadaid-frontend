@@ -5,63 +5,49 @@ import { useForm, useWatch, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import SOSHeader from "./sos-header";
-import SOSLocation from "./sos-location";
-import SOSForm from "./sos-form";
-import SOSSubmit from "./sos-submit";
-import SOSTracker from "@/components/sos/sos-tracker";
-import { NearbyHelpPanel } from "@/components/sos/nearby-help-panel";
-import SOSSidebarInfo from "./sos-sidebar-info";
+import { ContactStep, DetailsStep, LocationStep, SituationStep } from "./sos-steps";
+import { EmergencyNumbers, SendButton, SOSSummary } from "./sos-summary";
+import { SOSSuccess } from "./sos-success";
+import { MySosRequests } from "@/components/sos/my-sos-requests";
 import { sosFormSchema, SOSFormData } from "./types";
 import { useCreateSos, useSosTracking } from "@/lib/hooks/use-sos";
+import { rememberSosId } from "@/lib/my-sos-store";
 import { ApiError } from "@/lib/api-client";
 import type { HelpType } from "@/lib/types/api";
 import { useT } from "@/lib/i18n/use-t";
 
-const LAST_SOS_ID_KEY = "floodaid:last-sos-id";
+const EMPTY: SOSFormData = {
+  name: "",
+  districtId: null,
+  phone: "",
+  peopleCount: null,
+  helpTypes: [],
+  description: "",
+  photoPreviews: [],
+  photoUrls: [],
+};
 
 export default function SOSContent() {
-  const form = useForm<SOSFormData>({
-    resolver: zodResolver(sosFormSchema),
-    mode: "onSubmit",
-    defaultValues: {
-      name: "",
-      districtId: null,
-      phone: "",
-      peopleCount: null,
-      helpTypes: [],
-      description: "",
-      photoPreviews: [],
-      photoUrls: [],
-    },
-  });
-
+  const form = useForm<SOSFormData>({ resolver: zodResolver(sosFormSchema), mode: "onSubmit", defaultValues: EMPTY });
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [address, setAddress] = useState("");
-  const [generatedSosId, setGeneratedSosId] = useState<string | null>(null);
-  const [hasSubmitted, setHasSubmitted] = useState(false);
-
+  const [sosId, setSosId] = useState<string | null>(null);
   const createSos = useCreateSos();
   const { t } = useT();
-  const { data: trackedSos, isLoading: isTrackingLoading } = useSosTracking(generatedSosId);
+  const { data: tracked, isLoading: trackingLoading } = useSosTracking(sosId);
+  const v = useWatch({ control: form.control }) as SOSFormData;
 
-  const formValues = useWatch({ control: form.control }) as SOSFormData;
-
-  const getMissingRequirements = () => {
-    const missing: string[] = [];
-    if (formValues.name.trim().length < 2) missing.push(t("sos.missing.name"));
-    if (formValues.districtId === null) missing.push(t("sos.missing.district"));
-    if (location === null) missing.push(t("sos.missing.location"));
-    if (formValues.peopleCount === null) missing.push(t("sos.missing.people"));
-    if (formValues.helpTypes.length === 0) missing.push(t("sos.missing.help"));
-    if (!/^01\d{9}$/.test(formValues.phone)) {
-      missing.push(t("sos.missing.phone"));
-    }
-    return missing;
-  };
+  const checklist = [
+    { label: t("sos.missing.location"), done: location !== null },
+    { label: t("sos.missing.district"), done: v.districtId !== null },
+    { label: t("sos.missing.people"), done: v.peopleCount !== null },
+    { label: t("sos.missing.help"), done: v.helpTypes.length > 0 },
+    { label: t("sos.missing.name"), done: v.name.trim().length >= 2 },
+    { label: t("sos.missing.phone"), done: /^01\d{9}$/.test(v.phone) },
+  ];
 
   const submitSos = async (values: SOSFormData) => {
     if (location === null || values.districtId === null) return;
-
     try {
       const sos = await createSos.mutateAsync({
         name: values.name,
@@ -71,84 +57,85 @@ export default function SOSContent() {
         addressText: address || undefined,
         districtId: values.districtId,
         peopleCount: values.peopleCount!,
-        helpType: values.helpTypes.map((t) => t.toLowerCase()) as HelpType[],
+        helpType: values.helpTypes.map((h) => h.toLowerCase()) as HelpType[],
         description: values.description || undefined,
         photoUrls: values.photoUrls.length > 0 ? values.photoUrls : undefined,
       });
-
-      setGeneratedSosId(sos.id);
-      setHasSubmitted(true);
-      try {
-        localStorage.setItem(LAST_SOS_ID_KEY, sos.id);
-      } catch {
-        // localStorage unavailable — tracking still works via the id shown on screen
-      }
-
-      setTimeout(() => {
-        document.getElementById("tracking-section")?.scrollIntoView({ behavior: "smooth" });
-      }, 100);
+      rememberSosId(sos.id);
+      window.dispatchEvent(new Event("floodaid:sos-saved"));
+      setSosId(sos.id);
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (error) {
       toast.error(error instanceof ApiError ? error.message : "Failed to submit SOS request. Please try again.");
     }
   };
 
-  // Show all missing fields in a single toast on submit (nothing inline before submit).
   const handleSubmit = (e?: FormEvent) => {
     e?.preventDefault();
-    const missing = getMissingRequirements();
+    const missing = checklist.filter((c) => !c.done).map((c) => c.label);
     if (missing.length > 0) {
-      toast.error(t("sos.incomplete"), {
-        description: `${t("sos.stillNeeded")} ${missing.join(", ")}.`,
-      });
-      // trigger RHF validation so field-level focus works, but no eager inline text
+      toast.error(t("sos.incomplete"), { description: `${t("sos.stillNeeded")} ${missing.join(", ")}.` });
       void form.trigger();
       return;
     }
     void form.handleSubmit(submitSos)();
   };
 
+  const startOver = () => {
+    form.reset(EMPTY);
+    setLocation(null);
+    setAddress("");
+    setSosId(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-28 xl:pb-0">
       <SOSHeader />
-      <main className="container mx-auto py-8 flex flex-col gap-10">
+      <main className="container relative z-10 mx-auto -mt-10 px-4 pb-16 sm:px-6 lg:px-8">
         <FormProvider {...form}>
-          {!hasSubmitted && (
-            <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
-              <div className="xl:col-span-8 flex flex-col gap-10">
-                <SOSLocation
-                  location={location}
-                  setLocation={setLocation}
-                  address={address}
-                  setAddress={setAddress}
-                />
-                <SOSForm />
-              </div>
-              <div className="xl:col-span-4 xl:sticky xl:top-8">
-                <SOSSidebarInfo />
-              </div>
-            </div>
-          )}
-
-          <div className="w-full">
-            <SOSSubmit
-              isSubmitted={hasSubmitted}
-              isSubmitting={createSos.isPending}
-              onSubmit={handleSubmit}
-              sosId={generatedSosId}
-              peopleCount={formValues.peopleCount}
-              helpTypes={formValues.helpTypes}
-              address={address}
+          {sosId ? (
+            <SOSSuccess
+              sosId={sosId}
+              sos={tracked}
+              isLoading={trackingLoading}
+              summary={{ people: v.peopleCount, help: v.helpTypes, address }}
+              location={location}
+              onNew={startOver}
             />
-          </div>
-
-          {hasSubmitted && (
-            <div className="w-full max-w-md mx-auto">
-              <NearbyHelpPanel location={location} />
+          ) : (
+            <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-12">
+              <div className="flex flex-col gap-6 xl:col-span-8">
+                <LocationStep location={location} setLocation={setLocation} address={address} setAddress={setAddress} />
+                <SituationStep />
+                <ContactStep />
+                <DetailsStep />
+              </div>
+              <aside className="flex flex-col gap-6 xl:sticky xl:top-28 xl:col-span-4">
+                <div className="hidden xl:block">
+                  <SOSSummary items={checklist} onSubmit={() => handleSubmit()} isSubmitting={createSos.isPending} />
+                </div>
+                <MySosRequests compact />
+                <EmergencyNumbers />
+              </aside>
             </div>
           )}
         </FormProvider>
-        <SOSTracker isVisible={hasSubmitted} sos={trackedSos} isLoading={isTrackingLoading} />
       </main>
+
+      {!sosId && (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 p-3 backdrop-blur xl:hidden">
+          <div className="mx-auto flex max-w-2xl items-center gap-3">
+            <div className="shrink-0 text-center">
+              <p className="text-lg font-bold tabular-nums text-foreground">
+                {checklist.filter((c) => c.done).length}/{checklist.length}
+              </p>
+              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{t("sos.progressDone")}</p>
+            </div>
+            <SendButton onClick={() => handleSubmit()} isSubmitting={createSos.isPending} className="h-12" />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

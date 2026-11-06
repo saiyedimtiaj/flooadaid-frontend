@@ -1,5 +1,4 @@
 import type { LucideIcon } from "lucide-react";
-import { Card } from "@/components/ui/card";
 
 interface DashboardWelcomeCardProps {
   icon: LucideIcon;
@@ -8,20 +7,23 @@ interface DashboardWelcomeCardProps {
   children?: React.ReactNode;
 }
 
-export function DashboardWelcomeCard({
-  icon: Icon,
-  title,
-  description,
-  children,
-}: DashboardWelcomeCardProps) {
+export function DashboardWelcomeCard({ icon: Icon, title, description, children }: DashboardWelcomeCardProps) {
   return (
-    <Card className="rounded-3xl border border-border bg-card p-6 md:p-8">
-      <div className="flex items-center justify-center h-12 w-12 rounded-2xl bg-primary/10 text-primary mb-4">
-        <Icon className="h-6 w-6" />
+    <section className="relative overflow-hidden rounded-2xl bg-primary text-primary-foreground">
+      <div className="pointer-events-none absolute -right-16 top-1/2 hidden h-72 w-72 -translate-y-1/2 sm:block" aria-hidden>
+        <div className="absolute inset-0 rounded-full border border-white/8" />
+        <div className="absolute inset-8 rounded-full border border-white/10" />
+        <div className="absolute inset-16 rounded-full border border-white/12" />
       </div>
-      <h2 className="text-xl font-extrabold text-foreground">{title}</h2>
-      <p className="text-sm text-muted-foreground mt-1.5 max-w-md">{description}</p>
-      {children && <div className="mt-6">{children}</div>}
-    </Card>
+      <div className="pointer-events-none absolute right-12 top-1/2 hidden -translate-y-1/2 sm:flex h-20 w-20 items-center justify-center rounded-2xl bg-lime text-lime-foreground" aria-hidden>
+        <Icon className="h-9 w-9" />
+      </div>
+
+      <div className="relative px-6 py-7 md:px-8 md:py-8 sm:pr-48">
+        <h2 className="text-2xl md:text-3xl font-bold tracking-tight">{title}</h2>
+        <p className="mt-2 max-w-xl text-sm md:text-base text-white/70">{description}</p>
+        {children && <div className="mt-5">{children}</div>}
+      </div>
+    </section>
   );
 }
