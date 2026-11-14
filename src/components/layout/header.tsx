@@ -129,15 +129,8 @@ export default function Navbar() {
               <Waves className="size-5 animate-pulse" />
             </div>
             <span className="font-bold text-xl tracking-tight">
-              <span className={!scrolled && isHomePage ? "text-lime" : "text-primary"}>Flood</span>
-              <span
-                className={cn(
-                  "transition-colors duration-200",
-                  !scrolled && isHomePage ? "text-white" : "text-foreground",
-                )}
-              >
-                Aid
-              </span>
+              <span className="text-primary">Flood</span>
+              <span className="text-foreground transition-colors duration-200">Aid</span>
             </span>
           </Link>
 
@@ -146,7 +139,7 @@ export default function Navbar() {
             className={cn(
               "hidden md:flex items-center gap-1 p-1 rounded-full transition-all duration-300 border",
               !scrolled && isHomePage
-                ? "bg-white/10 backdrop-blur-md border-white/10"
+                ? "bg-white/75 backdrop-blur-xl border-white/80 shadow-lg shadow-emerald-950/5"
                 : "bg-muted/60 border-border/50",
             )}
             aria-label="Main navigation"
@@ -161,12 +154,12 @@ export default function Navbar() {
                     "relative px-4 py-2 text-sm font-medium transition-all rounded-full focus-visible:outline-2 focus-visible:outline-destructive",
                     isActive
                       ? !scrolled && isHomePage
-                        ? "bg-white/20 text-white font-semibold"
+                        ? "bg-primary text-primary-foreground font-semibold shadow-xs"
                         : "bg-primary text-primary-foreground font-semibold shadow-xs"
                       : link.danger
                         ? "text-destructive hover:bg-destructive/10 font-semibold"
                         : !scrolled && isHomePage
-                          ? "text-white/80 hover:text-white hover:bg-white/10"
+                          ? "text-slate-600 hover:text-primary hover:bg-emerald-50/80"
                           : "text-muted-foreground hover:text-foreground hover:bg-accent/80",
                   )}
                 >
@@ -190,7 +183,7 @@ export default function Navbar() {
               <LanguageToggle
                 className={cn(
                   !scrolled && isHomePage
-                    ? "text-white hover:bg-white/10"
+                    ? "text-slate-700 hover:bg-white/70"
                     : "text-foreground hover:bg-accent",
                 )}
               />
@@ -232,7 +225,7 @@ export default function Navbar() {
                   className={cn(
                     "rounded-full px-5 transition-all",
                     !scrolled && isHomePage
-                      ? "text-white hover:bg-white/10 hover:text-white"
+                      ? "text-slate-700 hover:bg-white/70 hover:text-primary"
                       : "text-foreground hover:bg-accent",
                   )} nativeButton={false} render={<Link href="/login" className="flex items-center gap-1.5" />}>
                     <LogIn className="size-4" />
@@ -256,7 +249,7 @@ export default function Navbar() {
               className={cn(
                 "md:hidden inline-flex items-center justify-center p-2 rounded-xl transition-colors border focus-visible:outline-2 focus-visible:outline-destructive focus-visible:outline-offset-2",
                 !scrolled && isHomePage
-                  ? "text-white bg-white/5 border-white/10 hover:bg-white/15"
+                  ? "text-primary bg-white/80 border-white shadow-md hover:bg-white"
                   : "text-foreground bg-muted/40 border-border/50 hover:bg-accent",
               )}
               onClick={() => setMenuOpen(true)}
