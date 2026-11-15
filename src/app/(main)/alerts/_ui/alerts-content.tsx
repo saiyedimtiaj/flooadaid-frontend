@@ -16,6 +16,7 @@ import { ALERT_SEVERITIES } from "@/lib/alert-severity-styles";
 import type { Alert, AlertSeverity } from "@/lib/types/api";
 import type { SelectedLocation } from "@/components/map/location-search-modal";
 
+// Calculates the distance between two geographical points in kilometers
 function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
@@ -28,6 +29,7 @@ function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+/ Loads the map component dynamically to disable server-side rendering
 const AlertsMap = dynamic(() => import("./alerts-map"), {
   ssr: false,
   loading: () => (
@@ -37,6 +39,7 @@ const AlertsMap = dynamic(() => import("./alerts-map"), {
   ),
 });
 
+// Assigns a priority weight to each alert severity level
 const SEVERITY_WEIGHT: Record<AlertSeverity, number> = {
   CRITICAL: 5,
   DANGER: 4,
@@ -49,6 +52,8 @@ export function AlertsContent() {
   // Deep link from the home-page map: /alerts?district=<id>
   const searchParams = useSearchParams();
   const districtParam = Number(searchParams.get("district"));
+  
+  // Stores search, filter, location, and selected alert information
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDivisionId, setSelectedDivisionId] = useState<number | null>(null);
   const [selectedDistrictId, setSelectedDistrictId] = useState<number | null>(
@@ -62,6 +67,7 @@ export function AlertsContent() {
 
   const [, startTransition] = useTransition();
 
+  // Fetches active flood alerts based on the selected district and severity
   const { data, isLoading } = useAlerts({
     limit: 100,
     isActive: true,
@@ -70,6 +76,7 @@ export function AlertsContent() {
   });
   const alerts = useMemo(() => data?.data ?? [], [data]);
 
+  // Adds or removes a severity level from the selected filters
   const handleToggleSeverity = (severity: AlertSeverity) => {
     startTransition(() => {
       setSelectedSeverities((prev) =>
@@ -78,6 +85,7 @@ export function AlertsContent() {
     });
   };
 
+  // Resets all applied filters and search values
   const handleClearFilters = () => {
     startTransition(() => {
       setSearchQuery("");
@@ -88,6 +96,7 @@ export function AlertsContent() {
     });
   };
 
+   // Checks whether any filter is currently active
   const isFilterActive =
     searchQuery !== "" ||
     selectedDivisionId !== null ||
@@ -95,6 +104,7 @@ export function AlertsContent() {
     selectedSeverities.length > 0 ||
     locationFilter !== null;
 
+  // Filters alerts by title, district, and selected geographical location  
   const filteredAlerts = useMemo(() => {
     let list = alerts;
 
@@ -122,6 +132,7 @@ export function AlertsContent() {
     return list;
   }, [alerts, searchQuery, locationFilter]);
 
+  // Counts the number of alerts in each severity category
   const countsBySeverity = useMemo(() => {
     const counts: Record<AlertSeverity, number> = { CRITICAL: 0, DANGER: 0, WARNING: 0, WATCH: 0, NORMAL: 0 };
     filteredAlerts.forEach((a) => {
@@ -130,6 +141,7 @@ export function AlertsContent() {
     return counts;
   }, [filteredAlerts]);
 
+  // Sorts alerts by distance or severity priority
   const sortedAlerts = useMemo(() => {
     // When a location is chosen, sort by nearest district first.
     if (locationFilter) {
@@ -152,6 +164,7 @@ export function AlertsContent() {
     });
   }, [filteredAlerts, locationFilter]);
 
+  // Calculates the total number of critical and danger alerts
   const severeCount = alerts.filter((a) => a.severity === "CRITICAL" || a.severity === "DANGER").length;
 
   return (
@@ -176,6 +189,7 @@ export function AlertsContent() {
         ]}
       />
 
+     {/* Provides search, severity, district, and location filters */}
       <AlertFilters
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
@@ -191,6 +205,7 @@ export function AlertsContent() {
         setLocationFilter={setLocationFilter}
       />
 
+     {/* Provides search, severity, district, and location filters */}
       <div className="flex flex-wrap items-center gap-2 py-1 select-none">
         {ALERT_SEVERITIES.map((severity) => {
           const dotColors: Record<AlertSeverity, string> = {
@@ -219,6 +234,8 @@ export function AlertsContent() {
           );
         })}
       </div>
+
+
       <div className="flex items-center justify-between gap-4 pt-2 border-t border-border/40">
         <span className="text-xs font-semibold text-muted-foreground">
           {isLoading ? "Loading alerts..." : `Showing ${filteredAlerts.length} of ${alerts.length} flood alerts`}
@@ -282,6 +299,8 @@ export function AlertsContent() {
           </div>
         )}
       </div>
+
+     {/* Opens the selected alert's detailed information */} 
       <AlertDetailSheet
         alert={selectedAlert}
         isOpen={selectedAlert !== null}

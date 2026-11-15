@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import type { Shelter } from "@/lib/types/api";
 import { useT } from "@/lib/i18n/use-t";
 
+// Defines the properties required to display a shelter card
 interface ShelterCardProps {
   shelter: Shelter;
   isSelected: boolean;
@@ -26,6 +27,7 @@ interface ShelterCardProps {
   index: number;
 }
 
+// Determines the card's color and status based on occupancy percentage
 function statusThemeFor(occupancyPercent: number) {
   if (occupancyPercent > 80) {
     return {
@@ -60,6 +62,7 @@ function statusThemeFor(occupancyPercent: number) {
   };
 }
 
+// Lists the facilities that can be available in a shelter
 const facilityMeta = [
   { key: "hasFood" as const, label: "Food", icon: UtensilsCrossed },
   { key: "hasWater" as const, label: "Water", icon: Droplets },
@@ -75,6 +78,8 @@ export default function ShelterCard({
   index,
 }: ShelterCardProps) {
   const { pick } = useT();
+  
+  // Calculates the percentage of shelter capacity currently occupied
   const occupancyPercent = Math.round(
     (shelter.currentOccupancy / shelter.capacity) * 100,
   );
@@ -104,6 +109,7 @@ export default function ShelterCard({
           isSelected ? "border-primary/50" : "border-border hover:border-primary/25",
         )}
       >
+      {/* Displays the shelter icon and occupancy status */}
         <div className={cn("relative overflow-hidden px-5 pt-5 pb-7", status.tint)}>
           <Building2
             className={cn(
@@ -142,6 +148,7 @@ export default function ShelterCard({
             </span>
           </div>
 
+        {/* Shows the shelter name and address */}
           <h3
             onClick={(e) => {
               e.stopPropagation();
@@ -158,6 +165,7 @@ export default function ShelterCard({
         </div>
 
         <div className="flex flex-col flex-1 gap-4 p-5">
+        {/* Displays current occupancy and the capacity progress bar */}
           <div>
             <div className="flex justify-between items-center text-xs">
               <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
@@ -181,6 +189,7 @@ export default function ShelterCard({
             </div>
           </div>
 
+        {/* Shows all available facilities or lists them individually */}
           {allFacilitiesAvailable ? (
             <div className="inline-flex items-center gap-1 self-start px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[10px] font-semibold">
               <CheckCircle className="size-3" />
@@ -203,6 +212,7 @@ export default function ShelterCard({
             </div>
           )}
 
+        {/* Provides Google Maps directions and a phone call option */}
           <div
             className="mt-auto pt-3.5 border-t border-border flex gap-2"
             onClick={(e) => e.stopPropagation()}
