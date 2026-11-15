@@ -25,6 +25,7 @@ import { StatCard } from "@/components/dashboard/stat-card";
 import { ActionTile } from "@/components/dashboard/action-tile";
 import { LiveAlertsPanel } from "@/components/dashboard/live-alerts-panel";
 
+//Saftey checklist items
 const SAFETY_STEPS = [
   "Keep your phone charged and a power bank ready",
   "Pack dry food, drinking water and medicine for 3 days",
@@ -32,8 +33,11 @@ const SAFETY_STEPS = [
   "Move to higher ground as soon as water starts rising",
 ];
 
+//User dashboard page
 export default function UserDashboardPage() {
+  //Get current user information
   const { data: user } = useCurrentUser();
+//Get public dashboard statictics
   const { data: summary, isLoading } = usePublicSummary();
 
   return (
