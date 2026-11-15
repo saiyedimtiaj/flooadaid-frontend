@@ -33,7 +33,7 @@ const SAFETY_STEPS = [
   "Move to higher ground as soon as water starts rising",
 ];
 
-//User dashboard page
+
 export default function UserDashboardPage() {
   //Get current user information
   const { data: user } = useCurrentUser();
