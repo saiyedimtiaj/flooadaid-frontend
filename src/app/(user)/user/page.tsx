@@ -1,6 +1,8 @@
+TypeScript
 "use client";
-
+//Import Next.js Link for nevigation
 import Link from "next/link";
+//Import icons
 import {
   Home,
   MapPin,
