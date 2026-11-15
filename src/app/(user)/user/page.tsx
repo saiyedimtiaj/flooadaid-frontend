@@ -15,6 +15,8 @@ import {
   LifeBuoy,
   CheckCircle2,
 } from "lucide-react";
+
+//Import UI componenets and hooks
 import { Button } from "@/components/ui/button";
 import { useCurrentUser } from "@/lib/hooks/use-current-user";
 import { usePublicSummary } from "@/lib/hooks/use-stats";
