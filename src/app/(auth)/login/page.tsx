@@ -1,9 +1,9 @@
-"use client";
+"use client";// এই পেজটি Client Component হিসেবে কাজ করবে।
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useRouter } from "next/navigation";// প্রোগ্রামেটিকভাবে অন্য পেজে Redirect করার জন্য useRouter ব্যবহার করা হয়েছে।
+import { useForm } from "react-hook-form"; // Login Form পরিচালনা ও Validation করার জন্য useForm ব্যবহার করা হয়েছে।
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Loader2, LogIn, TriangleAlert } from "lucide-react";

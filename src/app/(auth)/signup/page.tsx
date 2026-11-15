@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { toast } from "sonner";
-import { Loader2, UserPlus, TriangleAlert } from "lucide-react";
+import { useState } from "react"; // Component-এর State পরিচালনার জন্য useState import করা হয়েছে।
+import Link from "next/link";// এক পেজ থেকে অন্য পেজে যাওয়ার জন্য Link import করা হয়েছে।
+import { useRouter } from "next/navigation";// Page Navigation এবং Redirect করার জন্য useRouter import করা হয়েছে।
+import { useForm } from "react-hook-form"; // Signup Form পরিচালনা ও Validation করার জন্য useForm import করা হয়েছে।
+import { zodResolver } from "@hookform/resolvers/zod";// Zod Schema দিয়ে Form Validation করার জন্য zodResolver import করা হয়েছে।
+import { toast } from "sonner";// Success এবং Error Notification দেখানোর জন্য toast import করা হয়েছে।
+import { Loader2, UserPlus, TriangleAlert } from "lucide-react";  // Loading, Signup এবং Emergency Alert Icon import করা হয়েছে।
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
