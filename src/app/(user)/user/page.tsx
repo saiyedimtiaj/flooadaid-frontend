@@ -32,7 +32,7 @@ const SAFETY_STEPS = [
   "Know the route to your nearest shelter",
   "Move to higher ground as soon as water starts rising",
 ];
-// add default
+// add dashboard page
 export default function UserDashboardPage() {
   //Get current user information
   const { data: user } = useCurrentUser();
@@ -47,6 +47,7 @@ export default function UserDashboardPage() {
         description="Live flood conditions, safe shelters and emergency help — everything you need during a flood, in one place."
       >
         <div className="flex flex-wrap gap-3">
+        {/*SOS button*/}
           <Button
             size="lg"
             nativeButton={false}
@@ -56,6 +57,7 @@ export default function UserDashboardPage() {
             <Siren className="h-4 w-4" />
             Send SOS
           </Button>
+          {/*Nearest shelter button*/}
           <Button
             size="lg"
             variant="outline"
@@ -69,7 +71,9 @@ export default function UserDashboardPage() {
         </div>
       </DashboardWelcomeCard>
 
+    {*Display dashboard statistic*/}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+
         <StatCard label="Districts on alert" value={summary?.districtsOnAlert} icon={Radar} tint="destructive" isLoading={isLoading} highlight href="/alerts" footerLabel="View alerts" />
         <StatCard label="Shelters open" value={summary?.sheltersOpen} icon={Home} tint="success" isLoading={isLoading} href="/shelters" footerLabel="Find a shelter" />
         <StatCard
@@ -111,8 +115,11 @@ export default function UserDashboardPage() {
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-lime">
                 <ShieldCheck className="h-5 w-5" />
               </div>
+              {/*Saftey checklist title*/}
               <h3 className="text-base font-bold text-foreground">Stay-safe checklist</h3>
             </div>
+
+            {/*Display  saftey steps*/}
             <ul className="flex flex-col gap-3">
               {SAFETY_STEPS.map((step) => (
                 <li key={step} className="flex items-start gap-2.5 text-sm text-foreground/85">
@@ -121,6 +128,7 @@ export default function UserDashboardPage() {
                 </li>
               ))}
             </ul>
+            {/*Link to full saftey guide*/}
             <Link href="/safety" className="mt-5 inline-flex text-sm font-semibold text-primary hover:underline">
               Full safety guide →
             </Link>
@@ -129,10 +137,14 @@ export default function UserDashboardPage() {
           <section className="relative overflow-hidden rounded-2xl border border-dashed border-primary/30 bg-accent p-6 text-foreground">
             <div className="relative">
               <HeartHandshake className="h-9 w-9 text-primary" />
+              {/*Volunteen section title*/}
               <h3 className="mt-3 text-lg font-extrabold">Become a volunteer</h3>
+              {/*Volinteer description*/}
               <p className="mt-1.5 text-sm text-foreground/70">
                 Help rescue families and deliver relief in your district.
               </p>
+
+              {/* Join volunteer button*/}
               <Button
                 nativeButton={false}
                 render={<Link href="/volunteer/profile" />}
