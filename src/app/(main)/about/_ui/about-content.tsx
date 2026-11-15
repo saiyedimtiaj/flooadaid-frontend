@@ -464,6 +464,16 @@ function Cta() {
     </section>
   );
 }
+function EmergencyNote() {
+  return (
+    <section className="container mx-auto px-4 sm:px-6 lg:px-8">
+      <p className="rounded-2xl border border-border bg-card p-4 text-center text-sm text-muted-foreground">
+        <Siren className="mr-2 inline h-4 w-4 text-primary" />
+        Emergency? Call 999 (Bangladesh national emergency number).
+      </p>
+    </section>
+  );
+}
 
 export function AboutContent() {
   return (
@@ -474,6 +484,7 @@ export function AboutContent() {
       <Challenge />
       <Platform />
       <Flow />
+      <EmergencyNote />
       <Cta />
     </div>
   );
